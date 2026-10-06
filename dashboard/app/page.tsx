@@ -178,7 +178,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
                   </div>
                 </div>
               ))}
-              <div className="flex items-center justify-between rounded-xl bg-rose-50/60 px-3 py-2 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl bg-rose-50/60 px-3 py-2 text-xs">
                 <span className="flex items-center gap-1.5 text-rose-700"><Ban className="size-3.5" /> Cancellation rate {(s.cancelRate * 100).toFixed(1)}%</span>
                 <span className="font-medium text-rose-700">{cad(s.fees)} in fees</span>
               </div>

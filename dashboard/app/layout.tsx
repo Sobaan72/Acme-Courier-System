@@ -4,7 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { ToastProvider } from "@/components/toast";
-import { COMPANY_NAME } from "@/lib/supabase";
+import { COMPANY_NAME, isConfigured } from "@/lib/supabase";
+import { SetupNotice } from "@/components/setup-notice";
 
 export const metadata: Metadata = {
   title: { default: "Ops Console", template: "%s · Ops Console" },
@@ -16,9 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="font-sans">
         <ToastProvider>
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen overflow-x-clip">
             <Sidebar company={COMPANY_NAME} />
-            <main className="min-w-0 flex-1 lg:pl-64">{children}</main>
+            <main className="min-w-0 flex-1 lg:pl-64">{isConfigured() ? children : <SetupNotice />}</main>
           </div>
         </ToastProvider>
       </body>

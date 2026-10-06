@@ -40,7 +40,7 @@ export function OrdersAreaChart({ data }: { data: Array<Record<string, number | 
 export function ChannelDonut({ data }: { data: { key: string; value: number }[] }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col items-center gap-5 2xl:flex-row">
       <div className="relative size-40 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -57,11 +57,11 @@ export function ChannelDonut({ data }: { data: { key: string; value: number }[] 
           </div>
         </div>
       </div>
-      <ul className="flex-1 space-y-2.5">
+      <ul className="w-full min-w-0 flex-1 space-y-2.5">
         {data.map((d) => (
           <li key={d.key} className="flex items-center gap-2 text-sm">
             <span className="size-2.5 rounded-full" style={{ background: CHANNEL_COLORS[d.key] }} />
-            <span className="text-slate-600">{CHANNEL_NAMES[d.key] ?? d.key}</span>
+            <span className="truncate text-slate-600">{CHANNEL_NAMES[d.key] ?? d.key}</span>
             <span className="ml-auto font-medium tabular-nums">{d.value}</span>
             <span className="w-10 text-right text-xs text-slate-400 tabular-nums">{total ? Math.round((d.value / total) * 100) : 0}%</span>
           </li>
