@@ -1,0 +1,4256 @@
+{
+  "name": "Nexordis Acme - Main Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/call-events",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        -64
+      ],
+      "id": "9a7dd075-8f9b-4b88-9b24-65d0e3df1188",
+      "name": "Webhook",
+      "webhookId": "3d10b22f-775f-43c7-bd2a-86623ac9fa42"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1660c754-ff23-4d0b-8b04-3e44c19280a9",
+              "leftValue": "={{  $json.body.event  }}",
+              "rightValue": "call_analyzed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        -64
+      ],
+      "id": "d99ed866-1530-46cb-9441-ff40df84016e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "tableId": "call_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "transcript",
+              "fieldValue": "={{ $json.body.call.transcript  }}"
+            },
+            {
+              "fieldId": "outcome",
+              "fieldValue": "={{ $json.body.call.call_analysis?.call_successful ? 'order_captured' : 'abandoned'  }}"
+            },
+            {
+              "fieldId": "duration_seconds",
+              "fieldValue": "={{ Math.round(($json.body.call.duration_ms || 0) / 1000)  }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -240
+      ],
+      "id": "8f3ef602-78b9-4c34-8a45-4e48c2707375",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1104,
+        -240
+      ],
+      "id": "4f4f8816-e347-4ef2-bd6a-4f7e7e5cb0ea",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        144
+      ],
+      "id": "63a727e8-6092-47b2-b9df-907cbef8488d",
+      "name": "Manual Trigger - Connectivity Check"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "companies"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        144
+      ],
+      "id": "bff93c11-a663-4a1c-b089-fa564e13822c",
+      "name": "Get Companies (Connectivity Check)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/get-quote",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -608,
+        416
+      ],
+      "id": "e1c0c99a-9dba-4b96-8450-d957f66c0cb3",
+      "name": "Webhook - Get Quote",
+      "webhookId": "43ba5b9a-382d-47ed-8fb8-1a52f08aa096"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pricing_config",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "zone",
+              "condition": "eq",
+              "keyValue": "={{ String($json.zone) }}"
+            },
+            {
+              "keyName": "weight_class",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook - Get Quote').item.json.body.args.package_size }}"
+            },
+            {
+              "keyName": "service_tier",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook - Get Quote').item.json.body.args.service_tier }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        320,
+        416
+      ],
+      "id": "28fe97f9-59de-4bf1-a9b6-721e6496e198",
+      "name": "Lookup Pricing Config",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Price = base rate for (zone, size) x service tier multiplier (pricing_config).\nconst z = $('Determine Zone').first().json;\nif (z.out_of_area) return [{ json: { price: null, currency: 'CAD', zone: null, found: 'false', reason: 'out_of_area', message: z.message }, pairedItem: { item: 0 } }];\nconst row = $input.all().map(i => i.json).find(r => r && r.base_rate_cad !== undefined && r.base_rate_cad !== null);\nif (!row) return [{ json: { price: null, currency: 'CAD', zone: z.zone, found: 'false', reason: 'no_price' }, pairedItem: { item: 0 } }];\nconst price = Math.round(Number(row.base_rate_cad) * Number(row.tier_multiplier) * 100) / 100;\nreturn [{ json: { price, currency: 'CAD', zone: row.zone, found: 'true', zone_basis: z.basis, pickup_zone: z.pickup_zone, dropoff_zone: z.dropoff_zone, pickup_km: z.pickup_km, dropoff_km: z.dropoff_km }, pairedItem: { item: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        416
+      ],
+      "id": "8f49c6a9-310a-41e7-ad7c-cc5b992fa5cc",
+      "name": "Compute Quote Price"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        416
+      ],
+      "id": "e7196bce-3fa0-4f8c-ad12-47c88231a843",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/book-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        640
+      ],
+      "id": "fd5a5841-7379-46bd-97f2-c7d37cd5cd63",
+      "name": "Webhook - Book Order",
+      "webhookId": "89b55e96-c5d5-4363-98c8-4f0557516a18"
+    },
+    {
+      "parameters": {
+        "tableId": "orders",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "pickup_address",
+              "fieldValue": "={{  $json.body.args.pickup_address  }}"
+            },
+            {
+              "fieldId": "dropoff_address",
+              "fieldValue": "={{  $json.body.args.dropoff_address  }}"
+            },
+            {
+              "fieldId": "package_size",
+              "fieldValue": "={{  $json.body.args.package_size  }}"
+            },
+            {
+              "fieldId": "service_tier",
+              "fieldValue": "={{  $json.body.args.service_tier  }}"
+            },
+            {
+              "fieldId": "customer_name",
+              "fieldValue": "={{  $json.body.args.customer_name  }}"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{  $json.body.args.customer_phone  }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "confirmed"
+            },
+            {
+              "fieldId": "quoted_price_cad",
+              "fieldValue": "={{  Number($json.body.args.quote_amount)  }}"
+            },
+            {
+              "fieldId": "intake_channel",
+              "fieldValue": "={{ $json.body.args.intake_channel || 'phone' }}"
+            },
+            {
+              "fieldId": "customer_email",
+              "fieldValue": "={{ String($json.body.args.customer_email || '').trim().toLowerCase() || null }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        640
+      ],
+      "id": "59f161a8-0e6f-4078-9497-e0a102bc6ce9",
+      "name": "Create Order Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst row = rows[0].json;\nconst isError = !!row.error || !row.order_number;\nconst msg = isError ? '' : ('Your order is booked. Confirmation number ' + row.order_number + '. Thanks for choosing Acme Courier.');\nconst errMsg = isError ? ((row.error && row.error.message) || 'order_creation_failed') : null;\nreturn [{ json: { success: isError ? 'false' : 'true', order_id: isError ? null : row.order_number, confirmation_message: msg, error: errMsg } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        544
+      ],
+      "id": "c6b36c73-b218-4370-b6c5-4c98ccfa6c28",
+      "name": "Build Confirmation Message"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1552,
+        544
+      ],
+      "id": "4a461f12-56e2-4a82-a421-d9c1f2b26171",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/check-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -528,
+        800
+      ],
+      "id": "eaed001d-02b1-499b-8bb7-6cd07593d925",
+      "name": "Webhook - Check Status",
+      "webhookId": "114c9ad2-c779-4303-a2d8-7596f3ef1fe4"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "={{  $json.body.args.order_reference ? 'order_number' : 'customer_phone'  }}",
+              "condition": "eq",
+              "keyValue": "={{  $json.body.args.order_reference || $json.body.args.customer_phone  }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        800
+      ],
+      "id": "904ba2b5-32b8-478b-be27-c0de9b6f069e",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst found = rows.length > 0 && !!rows[0].json && !!rows[0].json.status;\nif (!found) {\n    return [{ json: { found: 'false', status: 'not_found', eta: 'No matching order found' } }];\n}\nconst row = rows[0].json;\nconst statusMap = {\n    pending: 'not yet picked up',\n    quoted: 'not yet picked up',\n    confirmed: 'not yet picked up',\n    in_transit: 'on the way, estimated within a few hours',\n    delivered: row.actual_delivery_timestamp ? ('delivered on ' + row.actual_delivery_timestamp) : 'delivered',\n    cancelled: 'cancelled'\n};\nconst eta = statusMap[row.status] || 'status unknown';\nreturn [{ json: { found: 'true', status: row.status, eta: eta } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        800
+      ],
+      "id": "913bd070-e278-488f-a76f-4343273450d5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        48,
+        800
+      ],
+      "id": "d7fdafaa-60fa-4115-85af-1b3be0c35039",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/embed-knowledge-doc",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1216,
+        1200
+      ],
+      "id": "25447ccd-c40c-42c8-91b8-9a3282d68e5e",
+      "name": "Webhook1",
+      "webhookId": "251c43cd-d381-4fee-ac2f-3ea48e48d6f7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://<PINECONE_INDEX_HOST>/records/namespaces/{{ $json.body.company_id }}/upsert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "<SECRET>"
+            },
+            {
+              "name": "X-Pinecone-Api-Version",
+              "value": "2025-04"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/x-ndjson",
+        "body": "={{ JSON.stringify({_id: $json.body.doc_id, content: $json.body.content, title: $json.body.title, source_type: $json.body.source_type}) + '\\n' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1440,
+        1200
+      ],
+      "id": "9335002d-04a1-4256-8da7-21315bda76b2",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "knowledge_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "doc_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook1').item.json.body.doc_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "pinecone_vector_id",
+              "fieldValue": "={{ $('Webhook1').item.json.body.doc_id }}"
+            },
+            {
+              "fieldId": "pinecone_namespace",
+              "fieldValue": "={{ $('Webhook1').item.json.body.company_id }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        1200
+      ],
+      "id": "a22eeb42-2bf9-4e43-a1e7-4ceb2a1a93aa",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1792,
+        1200
+      ],
+      "id": "58cdaa4b-3ab4-495b-8725-ef5ace050f03",
+      "name": "Respond to Webhook4"
+    },
+    {
+      "parameters": {
+        "path": "acme/whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1808,
+        1680
+      ],
+      "id": "e76c9124-1a9c-4c6f-aa56-f9936aec1014",
+      "name": "Webhook - WhatsApp Verify",
+      "webhookId": "2ad27cdf-cf42-405e-884c-e42f0b910c87"
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = $input.first().json.query;\nconst mode = q ? q['hub.mode'] : undefined;\nconst token = q ? q['hub.verify_token'] : undefined;\nconst challenge = q ? (q['hub.challenge'] || '') : '';\nconst expected = 'nexordis_acme_wa_verify_2026';\nconst verified = mode === 'subscribe' && token === expected;\nreturn [{json: {verified: verified, challenge: challenge}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        1680
+      ],
+      "id": "923e72da-8171-4875-8c83-17b01f52861e",
+      "name": "Verify Token"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bfedea15-19af-433f-89b7-b5cf576d1625",
+              "leftValue": "={{ $json.verified }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1392,
+        1680
+      ],
+      "id": "33585108-9b5d-4975-9162-e338858be834",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1168,
+        1616
+      ],
+      "id": "6cae68c7-059d-427b-8fc5-66e19167e1e7",
+      "name": "Respond - WA Verify OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"verification failed\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1168,
+        1776
+      ],
+      "id": "c667e0d3-d498-43e1-81b5-c78a34144e10",
+      "name": "Respond - WA Verify Failed"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        1968
+      ],
+      "id": "cb6c84e3-6293-4654-b72e-74efd96d33f1",
+      "name": "Webhook - WhatsApp Receive",
+      "webhookId": "97dd1144-c85a-4208-81d5-68c25ed3d42b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst entry = (body.entry && body.entry[0]) || {};\nconst change = (entry.changes && entry.changes[0]) || {};\nconst value = change.value || {};\nconst messages = value.messages || [];\nconst statuses = value.statuses || [];\nconst isStatus = messages.length === 0 && statuses.length > 0;\nconst msg = messages[0] || {};\nconst from = msg.from || '';\nlet text = (msg.text && msg.text.body) || '';\nlet isListSelection = false;\nlet listSelectionId = '';\nif (msg.type === 'interactive' && msg.interactive && msg.interactive.list_reply) {\n  isListSelection = true;\n  listSelectionId = msg.interactive.list_reply.id || '';\n  const menuTextMap = {\n    menu_quote: \"I'd like to get a quote for a delivery.\",\n    menu_book: \"I'd like to book a delivery.\",\n    menu_track: \"I'd like to track an order.\",\n    menu_faq: \"I have a general question about your service.\"\n  };\n  text = menuTextMap[listSelectionId] || (msg.interactive.list_reply.title || '');\n}\nreturn [{json: {isStatus: isStatus, from: from, text: text, isListSelection: isListSelection, listSelectionId: listSelectionId}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        1968
+      ],
+      "id": "c0c2b567-8aed-4f51-874f-7107b8ef4dc1",
+      "name": "Parse WA Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2ef13cb8-4fe7-4584-878b-3d3aec601397",
+              "leftValue": "={{ $json.isStatus }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        1968
+      ],
+      "id": "2991b602-6962-4d57-9876-cd7509640645",
+      "name": "If - Is Status Callback"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "wa_conversations",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.from }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "collecting"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        576,
+        1984
+      ],
+      "id": "035ab4f9-d57c-4ad9-a103-628e1fd481d6",
+      "name": "Get Conversation State",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const from = $('Parse WA Payload').first().json.from;\nconst text = $('Parse WA Payload').first().json.text;\nconst rows = $input.all();\nconst rawRow = rows.length > 0 ? rows[0].json : null;\nconst existing = (rawRow && rawRow.customer_phone) ? rawRow : null;\nconst priorSlots = existing ? (existing.slots || {}) : {};\nconst priorIntent = (existing && existing.intent) ? existing.intent : '';\nconst priorSlotsJson = JSON.stringify(priorSlots);\nconst hasExisting = existing ? true : false;\nreturn [{json: {from: from, text: text, priorSlotsJson: priorSlotsJson, priorIntent: priorIntent, hasExisting: hasExisting}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        1984
+      ],
+      "id": "a328bcb1-8a75-4e6d-85eb-076dc285e78a",
+      "name": "Normalize Conversation Context"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are Aria, a warm and genuinely helpful assistant for Acme Courier Co., chatting with customers over WhatsApp. Sound like a real, friendly team member texting back — natural, concise, conversational, never robotic or corporate. This may continue an earlier conversation with the same customer.\n\nKnown intent so far: {{ $json.priorIntent }}\nKnown fields collected so far (JSON): {{ $json.priorSlotsJson }}\n\nKNOWLEDGE BASE (Acme Courier Co.'s official information — the only source of facts about the business):\n{{ $json.knowledge_context }}\n\nYour previous message to the customer: {{ $json.last_bot_reply }}\nCustomer's most recent order number (if any): {{ $json.last_order_number }}\n\nNew message from customer: {{ $json.text }}\n\nClassify the message into exactly one intent, judging by meaning and content (not exact keywords). Treat typos, slang, emoji-only messages, one-word fragments, and non-English messages the same as clear English. IMPORTANT BIAS: \"other\" is a last resort, not a default — if a message could reasonably be read as a real question or a delivery-related need, classify it as faq/quote/book/status/cancel, never other. Only use other when there is truly no plausible business content at all (a bare greeting, thanks, joke, or unrelated remark).\n\nINTENT DEFINITIONS:\n- quote: wants a price, gives package/address details, OR simply states a general intent to ship/send/deliver THEIR OWN package or have something picked up right now — even with zero details yet (e.g. \"I want to deliver a package\", \"I need to ship something\", \"can you pick something up for me\", \"want to send a parcel\"). Any of these starts the quote flow so we can collect what's missing — do NOT wait for full details before using this intent. Do NOT use quote for a general question asking what services/options Acme offers (e.g. \"what services do you provide\", \"what type of services do you offer\", \"do you do same-day delivery\") — that is asking ABOUT the business with no stated shipping need of their own, which is faq, not quote.\n- book: wants to actually book/schedule a pickup (not just price), or is continuing a booking conversation.\n- status: asking about an EXISTING order — tracking, \"where is my package\", an order number, delivery status.\n- cancel: wants to cancel an existing order (\"cancel my order\", \"I don't need the delivery anymore\", \"cancel 10685\"). Set order_reference if they give one (otherwise leave it empty — the most recent order is used). Never say the order is cancelled yourself: the system checks the cancellation policy and asks the customer to confirm. Set cancel_confirmed to false (the system decides confirmation).\n- faq: ANY real question about the business itself — pricing structure, coverage area/regions/cities served, hours/days/times of operation, policies, how the service works, OR what services/delivery options/service types Acme offers (e.g. \"what services do you provide\", \"what type of services do you offer\", \"do you do same-day delivery\") — with no specific package or address given, and no stated intent to ship something of their own right now. This includes short/casual phrasings like \"do you deliver to X\", \"what areas do you cover\", \"are you open Sundays\", \"what times are you available\", \"when can I reach you\", \"are you open right now\" — all of these are asking about business hours/availability, not chit-chat with the bot itself.\n- other: ONLY pure greetings, small talk, thanks, compliments, jokes, venting, or complaints with NO actual question about the business AND no stated intent to ship/deliver/book anything. If the message expresses ANY intent to send, ship, deliver, or pick up a package — however vague or detail-free — it is quote, never other. If it contains any real question about Acme Courier Co. (even a brief, informally-phrased one) — including asking when/whether they're open or available — it is faq, not other. Never use \"other\" just because required fields are missing for quote/book — that's ready_to_proceed: false, not intent: other.\n\nIf a message mixes small talk with a real request (\"hey! quick question, how much to ship a small box across town?\"), classify by the real request — don't let a friendly opener push it into \"other\".\n\nRequired fields per intent:\nquote needs package_size, service_tier, pickup_address, dropoff_address\nbook needs all quote fields plus customer_name and customer_phone (default to the WhatsApp number if not stated)\nstatus needs order_reference OR customer_phone\nfaq only needs a question, always ready\nother is always ready\n\nREPLY_TEXT TONE (every intent): short sentences, natural contractions, warmth, zero corporate boilerplate. Vary wording so it never feels scripted.\n\nREPLY_TEXT FOR \"other\": always ready_to_proceed: true, but ALWAYS write a real reply_text — never empty, never a generic template. Briefly and warmly acknowledge what they said, then naturally steer back to how Acme Courier Co. can help (quote, booking, tracking, or a question). 1-2 short sentences, matching their energy. Example style only (write fresh wording, never reuse verbatim):\n- \"lol you're funny\" -> \"Ha, glad I could bring a smile! Need a delivery quote or want to check on an order?\"\n- \"this bot is useless\" -> \"Sorry I'm not hitting the mark! I'm best with quotes, bookings, and order status — want to try one, or should I get a real person?\"\n\nEXAMPLES (calibration only):\n\"Small package 1kg. From 123 Bay Street Toronto. To 456 Queen Street West Toronto.\" -> quote, ready_to_proceed: false (service_tier missing), reply_text asks standard or express.\n\"I want to book a delivery, small package, from 123 Bay St to 456 Queen St, standard shipping, name John, this number is fine\" -> book, ready_to_proceed: true.\n\"I want to deliver a package\" / \"Need to ship something\" -> quote, ready_to_proceed: false (all fields missing), reply_text warmly asks for package size and pickup/dropoff addresses to get started — never \"other\".\n\"How much does it cost to ship a package?\" -> faq, question: \"How much does it cost to ship a package?\"\n\"What areas/regions do you cover?\" / \"Do you deliver to Lahore?\" -> faq, question set to their exact question.\n\"I want to know about services\" / \"What type of services do you provide?\" / \"What services do you offer?\" -> faq (they're asking what Acme offers, not stating their own shipping need), question set to their exact question, reply_text briefly lists the service types/tiers — never quote, even though the word \"services\" sounds delivery-related.\n\"What times are you available?\" / \"Are you open right now?\" / \"When can I reach you?\" -> faq (they're asking about business hours/availability, not chatting) — question set to their exact question, reply_text gives the hours or, if unknown, says someone will confirm — never treat this as \"other\".\n\"Where is my order?\" -> status, needs order_reference or customer_phone.\n\"Hi there!\" -> other, warm greeting reply inviting them to say what they need.\n\nFIELD VALUES (must match exactly — the pricing system rejects anything else):\n- package_size: exactly one of S, M, L, XL. Map the customer's description using the \"Package Size & Weight Limits\" section of the knowledge base (e.g. \"small package 1kg\" -> S). If you can't tell, leave it empty and ask.\n- service_tier: exactly one of same_day_standard, same_day_express, next_day. \"express\" / \"same day express\" / \"2 hour\" -> same_day_express; \"standard\" / \"same day\" -> same_day_standard; \"next day\" / \"tomorrow\" -> next_day.\n- Never guess or default package_size or service_tier: leave them empty until the customer has actually stated them (in this or an earlier message). When the customer changes or picks one (e.g. \"same day express\"), overwrite the earlier value.\n- When talking to the customer, use plain words (small, medium, large, extra-large; Same-Day Standard, Same-Day Express, Next-Day), never the codes. A name is only needed to BOOK (intent book), never to give a quote — once size, service and both addresses are known, a quote is ready. For book, ready_to_proceed stays false until you have the customer's name — ask for it.\n- customer_email: optional. When you ask for the name to book, also offer an email confirmation in the same message (e.g. \"What name should I put on the booking? If you'd like an email confirmation, share your email too (optional).\"). Fill customer_email only with an address the customer actually typed. Never block or delay a booking for it.\n\nCONTINUATION RULE: If your previous message asked the customer for something (a name, an address, a size, a service) and the new message looks like that answer (e.g. just \"James Smith\", just an address, just \"small\"), it continues the previous intent — fill the field and keep the Known intent. Never classify such an answer as other.\n\nCLOSING RULE: If your previous message was a sign-off (\"you're welcome\", \"let me know if you need anything\", etc.) and the customer replies with a short acknowledgment (\"sure\", \"ok\", \"cool\", \"thanks\", \"bye\", a thumbs up), classify as other and reply with a short warm goodbye such as \"Have a great day!\" — no question, no list of options.\n\nHONESTY RULE: Only offer what you can actually do in this chat: give quotes, book deliveries, look up an order's status by order number, and answer questions from the knowledge base. Never say you are checking something, contacting a dispatcher, or that someone will follow up, unless the knowledge base says that happens. If the customer asks about their order (confirmation, pickup time, where it is), classify as status and use their most recent order number if they don't give one.\n\nNEW REQUEST RULE: Known fields are only for continuing the SAME request. If the new message starts a new request instead of answering the last question (e.g. \"I need a quote\", \"hello, I want to send something\", \"another delivery\", \"new order\"), do NOT reuse package_size, service_tier, pickup_address or dropoff_address from Known fields — set them empty and ask for them. Never give a quote using details the customer didn't give for this request.\n\nKB ANSWER RULE: For faq, reply_text IS the final answer the customer receives — answer their actual question directly and specifically using ONLY the knowledge base above (real tiers, zones, times, prices, policies). Keep it WhatsApp-length: 1-4 short sentences or a brief list, friendly, no filler. If the knowledge base doesn't cover it, say you'll check with the team and get back to them — never invent prices, times, or policies. You may also use the knowledge base to make replies for other intents more accurate.\n\nMerge the new message into known fields. Don't discard previously known fields unless the new message clearly corrects them.\n\nRespond with ONLY valid JSON, no markdown, no extra text, in exactly this shape:\n{\"intent\": \"\", \"package_size\": \"\", \"service_tier\": \"\", \"pickup_address\": \"\", \"dropoff_address\": \"\", \"customer_name\": \"\", \"customer_phone\": \"\", \"customer_email\": \"\", \"order_reference\": \"\", \"cancel_confirmed\": false, \"question\": \"\", \"ready_to_proceed\": false, \"reply_text\": \"\"}\n\nUse empty string for unknown fields. Set ready_to_proceed true only when all required fields for the detected intent are present. If not ready, reply_text is a short, friendly WhatsApp question asking for exactly what's missing (don't re-ask for things already known). If ready and intent is quote/book/status/faq, reply_text can be empty. If intent is \"other\", reply_text must always be filled in per the rules above.\n\nCustomer WhatsApp number: {{ $json.from }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        1792
+      ],
+      "id": "cb9372c9-07c1-4e15-989a-60e58a806b7b",
+      "name": "Gemini - Classify Intent",
+      "retryOnFail": true,
+      "waitBetweenTries": 1500,
+      "maxTries": 3,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Gemini"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8ccad65c-1696-4ec0-a537-4bd09c3cb12b",
+              "leftValue": "={{ $json.ready_to_proceed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2448,
+        1776
+      ],
+      "id": "9e8fd32c-e17b-444e-a4f0-97f7def028cf",
+      "name": "If - Ready to Proceed"
+    },
+    {
+      "parameters": {
+        "tableId": "wa_conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{ $('Normalize Conversation Context').item.json.from }}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{ $json.intent }}"
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={{ JSON.stringify({package_size: $json.package_size, service_tier: $json.service_tier, pickup_address: $json.pickup_address, dropoff_address: $json.dropoff_address, customer_name: $json.customer_name, customer_phone: $json.customer_phone, order_reference: $json.order_reference, question: $json.question}) }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "collecting"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        2336
+      ],
+      "id": "352e9220-dbc8-4522-9578-22dbe9429220",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "87930c76-8d33-4e06-9934-b5d9a22ee1cf",
+              "leftValue": "={{ !!$('Normalize Conversation Context').item.json.hasExisting || $('Create Conversation Row (Request)').isExecuted }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3744,
+        2240
+      ],
+      "id": "b8b8b5d4-2162-459b-8acd-b1944c2b6865",
+      "name": "If - Conversation Exists"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize Conversation Context').item.json.from }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{ $json.intent }}"
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={{ JSON.stringify({package_size: $json.package_size, service_tier: $json.service_tier, pickup_address: $json.pickup_address, dropoff_address: $json.dropoff_address, customer_name: $json.customer_name, customer_phone: $json.customer_phone, customer_email: $json.customer_email, order_reference: $json.order_reference, question: $json.question}) }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "collecting"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        2144
+      ],
+      "id": "e75a1a87-a50e-4a87-9745-9e48b963844a",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "quote",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "235ac40d-5eae-4c40-a2e3-f5d591a22b36"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "quote"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b8b00931-efeb-4840-a5fc-b39e90b40051",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "book",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "book"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ee5d9d40-3f77-4242-b754-c0307b7fd7df",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "status"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "222d1de3-7a49-4380-90ec-6763b2839c13",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "faq",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "faq"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "15c97743-4cbf-4db6-a74b-c5df3e277ed8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2656,
+        1472
+      ],
+      "id": "f5b6a811-9cec-4163-91e5-293779f55642",
+      "name": "Switch - Route Intent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<N8N_HOST>/webhook/acme/get-quote",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ args: { package_size: $json.package_size, service_tier: $json.service_tier, pickup_address: $json.pickup_address, dropoff_address: $json.dropoff_address } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3216,
+        864
+      ],
+      "id": "0b3ebfe8-2b82-44d4-ae3b-b5f309ded2f3",
+      "name": "HTTP - Get Quote"
+    },
+    {
+      "parameters": {
+        "jsCode": "const quote = $input.first().json;\nconst from = $('Normalize Conversation Context').first().json.from;\nlet e = {};\ntry { e = $('Enforce Required Fields').first().json; } catch (err) { e = {}; }\nconst slots = Object.keys(e).length ? e : $('Parse Gemini Response').first().json;\nconst tierNames = { same_day_standard: 'Same-Day Standard', same_day_express: 'Same-Day Express', next_day: 'Next-Day' };\nconst sizeNames = { S: 'small', M: 'medium', L: 'large', XL: 'extra-large' };\nconst found = (quote.found === true || quote.found === 'true') && quote.price != null;\nlet reply;\nif (quote.reason === 'out_of_area') {\n  reply = quote.message;\n} else if (!found) {\n  reply = \"Sorry, I couldn't find a price for that combination. Could you confirm the package size (small, medium, large or extra-large) and the service (Same-Day Standard, Same-Day Express or Next-Day)?\";\n} else if (e.book_pending) {\n  const size = sizeNames[slots.package_size] || slots.package_size;\n  const lines = [\n    'Please confirm your booking:',\n    '',\n    'Name: ' + (slots.customer_name || '-'),\n    'Pickup: ' + slots.pickup_address,\n    'Drop-off: ' + slots.dropoff_address,\n    'Package: ' + (size ? size.charAt(0).toUpperCase() + size.slice(1) : '-'),\n    'Service: ' + (tierNames[slots.service_tier] || slots.service_tier),\n    'Price: $' + Number(quote.price).toFixed(2) + ' ' + (quote.currency || 'CAD')\n  ];\n  if (slots.customer_email) lines.push('Email: ' + slots.customer_email);\n  lines.push('', 'Reply YES to confirm the booking, or tell me what you would like to change.');\n  reply = lines.join('\\n');\n} else {\n  const price = Number(quote.price).toFixed(2);\n  reply = 'Here is your quote: $' + price + ' ' + (quote.currency || 'CAD') + ' for a ' + (sizeNames[slots.package_size] || slots.package_size) + ' package via ' + (tierNames[slots.service_tier] || slots.service_tier) + (quote.zone ? ' (zone ' + quote.zone + ')' : '') + '. Reply BOOK if you would like to go ahead!';\n}\nreturn [{ json: { from, reply_text: reply }, pairedItem: { item: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4048,
+        864
+      ],
+      "id": "ed921697-d42f-45de-b9d7-6a679087830a",
+      "name": "Format Quote Reply"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<N8N_HOST>/webhook/acme/get-quote",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ args: { package_size: $json.package_size, service_tier: $json.service_tier, pickup_address: $json.pickup_address, dropoff_address: $json.dropoff_address } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3216,
+        1088
+      ],
+      "id": "daae7a9b-83f2-41ca-b2c6-ce77b3406dfd",
+      "name": "HTTP - Get Quote (Book)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "322d863b-60a7-49c9-adc4-ac702514659b",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3568,
+        1088
+      ],
+      "id": "7d8b9709-f12f-493c-b4c8-df4fcd6a5e5d",
+      "name": "If - Quote Found (Book)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<N8N_HOST>/webhook/acme/book-order",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ args: { intake_channel: 'whatsapp', pickup_address: $('Enforce Required Fields').item.json.pickup_address, dropoff_address: $('Enforce Required Fields').item.json.dropoff_address, package_size: $('Enforce Required Fields').item.json.package_size, service_tier: $('Enforce Required Fields').item.json.service_tier, customer_name: $('Enforce Required Fields').item.json.customer_name, customer_phone: $('Enforce Required Fields').item.json.customer_phone, customer_email: $('Enforce Required Fields').item.json.customer_email, quote_amount: Number($json.price) } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3936,
+        1264
+      ],
+      "id": "4c1b9d73-680c-4858-8754-b1c6ee36de8f",
+      "name": "HTTP - Book Order"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst from = $('Normalize Conversation Context').first().json.from;\nlet d = {};\ntry { d = $('Enforce Required Fields').first().json; } catch (e) { d = {}; }\nlet price = null;\ntry { price = $('HTTP - Get Quote (Book)').first().json.price; } catch (e) { price = null; }\nconst tierNames = { same_day_standard: 'Same-Day Standard', same_day_express: 'Same-Day Express', next_day: 'Next-Day' };\nconst sizeNames = { S: 'Small', M: 'Medium', L: 'Large', XL: 'Extra-large' };\nconst name = String(d.customer_name || '').trim();\nlet reply;\nif (result.success === true || result.success === 'true') {\n  const lines = [\n    'Thanks' + (name ? ', ' + name : '') + '! Your delivery is booked.',\n    '',\n    'Order number: ' + result.order_id,\n    'Name: ' + (name || '-'),\n    'Pickup: ' + (d.pickup_address || '-'),\n    'Drop-off: ' + (d.dropoff_address || '-'),\n    'Package: ' + (sizeNames[d.package_size] || d.package_size || '-'),\n    'Service: ' + (tierNames[d.service_tier] || d.service_tier || '-')\n  ];\n  if (price != null && price !== '') lines.push('Price: $' + Number(price).toFixed(2) + ' CAD');\n  const EMAIL_ENABLED = true; // set to true once Email - Send (Brevo) is connected and enabled\n  if (EMAIL_ENABLED && d.customer_email) lines.push('', 'A confirmation email is on its way to ' + d.customer_email + '.');\n  lines.push('', 'Keep your order number handy. Just message me anytime to check your delivery status.');\n  reply = lines.join('\\n');\n} else {\n  reply = 'Sorry, there was a problem booking your order (' + (result.error || 'unknown error') + '). Please try again or contact support.';\n}\nreturn [{ json: { from, reply_text: reply }, pairedItem: { item: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        1264
+      ],
+      "id": "c73a73ee-fc9e-4182-9788-1bf14fba8ce0",
+      "name": "Format Booking Reply"
+    },
+    {
+      "parameters": {
+        "jsCode": "const from = $('Normalize Conversation Context').first().json.from;\nconst reply = 'Sorry, I could not reconfirm pricing for your order, so I was not able to complete the booking. Could you resend your package size and service tier so I can try again?';\nreturn [{json: {from: from, reply_text: reply}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4064,
+        1072
+      ],
+      "id": "7f814cfe-4790-4a59-8d03-a64979dd6769",
+      "name": "Format Booking Failed Reply"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<N8N_HOST>/webhook/acme/check-status",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"args\": {\"order_reference\": \"{{ $('Enforce Required Fields').item.json.order_reference }}\", \"customer_phone\": \"{{ $('Enforce Required Fields').item.json.customer_phone }}\"}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3216,
+        1424
+      ],
+      "id": "52e3f143-f785-41f9-bef6-7fea3ca209f5",
+      "name": "HTTP - Check Order Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst from = $('Normalize Conversation Context').first().json.from;\nlet reply;\nif (result.found === 'true' || result.found === true) {\n  reply = 'Your order status: ' + result.status + '. Estimated arrival: ' + result.eta + '.';\n} else {\n  reply = 'Sorry, I could not find an order matching that reference. Could you double check the order number?';\n}\nreturn [{json: {from: from, reply_text: reply}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        1424
+      ],
+      "id": "212c5cec-fd07-45c9-a5eb-bcee0a09bfb0",
+      "name": "Format Status Reply"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a helpful customer support assistant for Acme Courier Co., a local courier and package delivery company. Use ONLY the company knowledge provided below to answer the customer's question in 2-3 friendly, concise WhatsApp-appropriate sentences. Do not invent policies, prices, or details that are not in the knowledge below.\n\nCOMPANY KNOWLEDGE:\n{{ $json.knowledge_context }}\n\nIf the company knowledge above does not contain the answer, say you'll have a team member follow up shortly — do not guess or make up an answer.\n\nCustomer question: {{ $json.question }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        3696,
+        2576
+      ],
+      "id": "ecc8f7c2-0747-41bd-9f03-deaf1c7eeb5b",
+      "name": "Gemini - Answer FAQ",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst from = $('Normalize Conversation Context').first().json.from;\nconst answer = (result.content && result.content.parts && result.content.parts[0] && result.content.parts[0].text) || result.text || result.output || (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].text) || 'Thanks for reaching out! A team member will follow up with you shortly.';\nreturn [{json: {from: from, reply_text: answer}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4352,
+        2576
+      ],
+      "id": "c0e8409b-8ffa-4604-8406-8c699ee8e82f",
+      "name": "Format FAQ Reply"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "updated_at",
+              "condition": "lt",
+              "keyValue": "={{ $now.minus({ days: 7 }).toISO() }}"
+            },
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        656,
+        2640
+      ],
+      "id": "d255b11f-abc1-493e-a1e4-513c71863629",
+      "name": "Delete Conversation Row",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Follow-up question to the customer. Uses Enforce Required Fields (which may have replaced the AI's text).\nconst from = $('Normalize Conversation Context').first().json.from;\nlet e = {};\ntry { e = $('Enforce Required Fields').first().json; } catch (err) { e = {}; }\nlet reply = String(e.reply_text || '').trim();\nif (!reply) { try { reply = String($('Parse Gemini Response').first().json.reply_text || '').trim(); } catch (err) {} }\nif (!reply) reply = 'Could you tell me a bit more so I can help with your delivery?';\nreturn [{ json: { from, reply_text: reply }, pairedItem: { item: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4208,
+        2240
+      ],
+      "id": "1f266e93-1932-4675-8e22-4c702bafdf9b",
+      "name": "Format Clarifying Reply"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "<SECRET>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: String($json.from), type: 'text', text: { body: String($json.reply_text || '') } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        6016,
+        1712
+      ],
+      "id": "57bb070c-1d84-4a7d-a120-80927bfe92a5",
+      "name": "Send WhatsApp Reply"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        2400
+      ],
+      "id": "e0183f95-07de-400b-9b5a-8398aacd5e16",
+      "name": "Schedule - Cleanup Stale Conversations"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "updated_at",
+              "condition": "lt",
+              "keyValue": "={{ $now.minus(24, 'hours').toISO() }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "intent"
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={}"
+            },
+            {
+              "fieldId": "last_bot_reply"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        656,
+        2400
+      ],
+      "id": "883f894b-5cf1-4e3c-97d0-30ed000472bd",
+      "name": "Delete Stale Conversation Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json;\nlet parsed = {};\ntry {\n  const text = raw.content.parts[0].text;\n  parsed = JSON.parse(text);\n} catch (e) {\n  parsed = {};\n}\nreturn {\n  json: {\n    ...raw,\n    ...parsed\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        1776
+      ],
+      "id": "14e8534e-6d3d-4764-8c60-16dad1fd96f2",
+      "name": "Parse Gemini Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const names = ['Format Quote Reply','Format Booking Reply','Format Booking Failed Reply','Format Status Reply', 'Format Cancel Reply','Format FAQ Reply (Direct)', 'Format FAQ Reply','Format Clarifying Reply','Format Off-Topic Reply','Format Welcome Reply'];\nlet data = null;\nfor (const n of names) {\n  try {\n    const item = $(n).item;\n    if (item && item.json && item.json.reply_text) { data = item.json; break; }\n  } catch(e) {}\n}\nif (!data) {\n    data = {from: $('Parse WA Payload').item.json.from, reply_text: 'Sorry, we are running a little slow right now. Please send your message again in a minute and I will pick it straight up.'};\n}\nreturn [{json: data}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5312,
+        1824
+      ],
+      "id": "3272a19c-d65a-4b71-8930-156890f5b187",
+      "name": "Resolve Reply Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.5-flash-lite",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are Aria, a warm and genuinely helpful assistant for Acme Courier Co., chatting with customers over WhatsApp. Sound like a real, friendly team member texting back — natural, concise, conversational, never robotic or corporate. This may continue an earlier conversation with the same customer.\n\nKnown intent so far: {{ $('Build KB for Classifier').item.json.priorIntent }}\nKnown fields collected so far (JSON): {{ $('Build KB for Classifier').item.json.priorSlotsJson }}\n\nKNOWLEDGE BASE (Acme Courier Co.'s official information — the only source of facts about the business):\n{{ $('Build KB for Classifier').item.json.knowledge_context }}\n\nYour previous message to the customer: {{ $('Build KB for Classifier').item.json.last_bot_reply }}\nCustomer's most recent order number (if any): {{ $('Build KB for Classifier').item.json.last_order_number }}\n\nNew message from customer: {{ $('Normalize Conversation Context').item.json.text }}\n\nClassify the message into exactly one intent, judging by meaning and content (not exact keywords). Treat typos, slang, emoji-only messages, one-word fragments, and non-English messages the same as clear English. IMPORTANT BIAS: \"other\" is a last resort, not a default — if a message could reasonably be read as a real question or a delivery-related need, classify it as faq/quote/book/status/cancel, never other. Only use other when there is truly no plausible business content at all (a bare greeting, thanks, joke, or unrelated remark).\n\nINTENT DEFINITIONS:\n- quote: wants a price, gives package/address details, OR simply states a general intent to ship/send/deliver THEIR OWN package or have something picked up right now — even with zero details yet (e.g. \"I want to deliver a package\", \"I need to ship something\", \"can you pick something up for me\", \"want to send a parcel\"). Any of these starts the quote flow so we can collect what's missing — do NOT wait for full details before using this intent. Do NOT use quote for a general question asking what services/options Acme offers (e.g. \"what services do you provide\", \"what type of services do you offer\", \"do you do same-day delivery\") — that is asking ABOUT the business with no stated shipping need of their own, which is faq, not quote.\n- book: wants to actually book/schedule a pickup (not just price), or is continuing a booking conversation.\n- status: asking about an EXISTING order — tracking, \"where is my package\", an order number, delivery status.\n- cancel: wants to cancel an existing order (\"cancel my order\", \"I don't need the delivery anymore\", \"cancel 10685\"). Set order_reference if they give one (otherwise leave it empty — the most recent order is used). Never say the order is cancelled yourself: the system checks the cancellation policy and asks the customer to confirm. Set cancel_confirmed to false (the system decides confirmation).\n- faq: ANY real question about the business itself — pricing structure, coverage area/regions/cities served, hours/days/times of operation, policies, how the service works, OR what services/delivery options/service types Acme offers (e.g. \"what services do you provide\", \"what type of services do you offer\", \"do you do same-day delivery\") — with no specific package or address given, and no stated intent to ship something of their own right now. This includes short/casual phrasings like \"do you deliver to X\", \"what areas do you cover\", \"are you open Sundays\", \"what times are you available\", \"when can I reach you\", \"are you open right now\" — all of these are asking about business hours/availability, not chit-chat with the bot itself.\n- other: ONLY pure greetings, small talk, thanks, compliments, jokes, venting, or complaints with NO actual question about the business AND no stated intent to ship/deliver/book anything. If the message expresses ANY intent to send, ship, deliver, or pick up a package — however vague or detail-free — it is quote, never other. If it contains any real question about Acme Courier Co. (even a brief, informally-phrased one) — including asking when/whether they're open or available — it is faq, not other. Never use \"other\" just because required fields are missing for quote/book — that's ready_to_proceed: false, not intent: other.\n\nIf a message mixes small talk with a real request (\"hey! quick question, how much to ship a small box across town?\"), classify by the real request — don't let a friendly opener push it into \"other\".\n\nRequired fields per intent:\nquote needs package_size, service_tier, pickup_address, dropoff_address\nbook needs all quote fields plus customer_name and customer_phone (default to the WhatsApp number if not stated)\nstatus needs order_reference OR customer_phone\nfaq only needs a question, always ready\nother is always ready\n\nREPLY_TEXT TONE (every intent): short sentences, natural contractions, warmth, zero corporate boilerplate. Vary wording so it never feels scripted.\n\nREPLY_TEXT FOR \"other\": always ready_to_proceed: true, but ALWAYS write a real reply_text — never empty, never a generic template. Briefly and warmly acknowledge what they said, then naturally steer back to how Acme Courier Co. can help (quote, booking, tracking, or a question). 1-2 short sentences, matching their energy. Example style only (write fresh wording, never reuse verbatim):\n- \"lol you're funny\" -> \"Ha, glad I could bring a smile! Need a delivery quote or want to check on an order?\"\n- \"this bot is useless\" -> \"Sorry I'm not hitting the mark! I'm best with quotes, bookings, and order status — want to try one, or should I get a real person?\"\n\nEXAMPLES (calibration only):\n\"Small package 1kg. From 123 Bay Street Toronto. To 456 Queen Street West Toronto.\" -> quote, ready_to_proceed: false (service_tier missing), reply_text asks standard or express.\n\"I want to book a delivery, small package, from 123 Bay St to 456 Queen St, standard shipping, name John, this number is fine\" -> book, ready_to_proceed: true.\n\"I want to deliver a package\" / \"Need to ship something\" -> quote, ready_to_proceed: false (all fields missing), reply_text warmly asks for package size and pickup/dropoff addresses to get started — never \"other\".\n\"How much does it cost to ship a package?\" -> faq, question: \"How much does it cost to ship a package?\"\n\"What areas/regions do you cover?\" / \"Do you deliver to Lahore?\" -> faq, question set to their exact question.\n\"I want to know about services\" / \"What type of services do you provide?\" / \"What services do you offer?\" -> faq (they're asking what Acme offers, not stating their own shipping need), question set to their exact question, reply_text briefly lists the service types/tiers — never quote, even though the word \"services\" sounds delivery-related.\n\"What times are you available?\" / \"Are you open right now?\" / \"When can I reach you?\" -> faq (they're asking about business hours/availability, not chatting) — question set to their exact question, reply_text gives the hours or, if unknown, says someone will confirm — never treat this as \"other\".\n\"Where is my order?\" -> status, needs order_reference or customer_phone.\n\"Hi there!\" -> other, warm greeting reply inviting them to say what they need.\n\nFIELD VALUES (must match exactly — the pricing system rejects anything else):\n- package_size: exactly one of S, M, L, XL. Map the customer's description using the \"Package Size & Weight Limits\" section of the knowledge base (e.g. \"small package 1kg\" -> S). If you can't tell, leave it empty and ask.\n- service_tier: exactly one of same_day_standard, same_day_express, next_day. \"express\" / \"same day express\" / \"2 hour\" -> same_day_express; \"standard\" / \"same day\" -> same_day_standard; \"next day\" / \"tomorrow\" -> next_day.\n- Never guess or default package_size or service_tier: leave them empty until the customer has actually stated them (in this or an earlier message). When the customer changes or picks one (e.g. \"same day express\"), overwrite the earlier value.\n- When talking to the customer, use plain words (small, medium, large, extra-large; Same-Day Standard, Same-Day Express, Next-Day), never the codes. A name is only needed to BOOK (intent book), never to give a quote — once size, service and both addresses are known, a quote is ready. For book, ready_to_proceed stays false until you have the customer's name — ask for it.\n- customer_email: optional. When you ask for the name to book, also offer an email confirmation in the same message (e.g. \"What name should I put on the booking? If you'd like an email confirmation, share your email too (optional).\"). Fill customer_email only with an address the customer actually typed. Never block or delay a booking for it.\n\nCONTINUATION RULE: If your previous message asked the customer for something (a name, an address, a size, a service) and the new message looks like that answer (e.g. just \"James Smith\", just an address, just \"small\"), it continues the previous intent — fill the field and keep the Known intent. Never classify such an answer as other.\n\nCLOSING RULE: If your previous message was a sign-off (\"you're welcome\", \"let me know if you need anything\", etc.) and the customer replies with a short acknowledgment (\"sure\", \"ok\", \"cool\", \"thanks\", \"bye\", a thumbs up), classify as other and reply with a short warm goodbye such as \"Have a great day!\" — no question, no list of options.\n\nHONESTY RULE: Only offer what you can actually do in this chat: give quotes, book deliveries, look up an order's status by order number, and answer questions from the knowledge base. Never say you are checking something, contacting a dispatcher, or that someone will follow up, unless the knowledge base says that happens. If the customer asks about their order (confirmation, pickup time, where it is), classify as status and use their most recent order number if they don't give one.\n\nNEW REQUEST RULE: Known fields are only for continuing the SAME request. If the new message starts a new request instead of answering the last question (e.g. \"I need a quote\", \"hello, I want to send something\", \"another delivery\", \"new order\"), do NOT reuse package_size, service_tier, pickup_address or dropoff_address from Known fields — set them empty and ask for them. Never give a quote using details the customer didn't give for this request.\n\nKB ANSWER RULE: For faq, reply_text IS the final answer the customer receives — answer their actual question directly and specifically using ONLY the knowledge base above (real tiers, zones, times, prices, policies). Keep it WhatsApp-length: 1-4 short sentences or a brief list, friendly, no filler. If the knowledge base doesn't cover it, say you'll check with the team and get back to them — never invent prices, times, or policies. You may also use the knowledge base to make replies for other intents more accurate.\n\nMerge the new message into known fields. Don't discard previously known fields unless the new message clearly corrects them.\n\nRespond with ONLY valid JSON, no markdown, no extra text, in exactly this shape:\n{\"intent\": \"\", \"package_size\": \"\", \"service_tier\": \"\", \"pickup_address\": \"\", \"dropoff_address\": \"\", \"customer_name\": \"\", \"customer_phone\": \"\", \"customer_email\": \"\", \"order_reference\": \"\", \"cancel_confirmed\": false, \"question\": \"\", \"ready_to_proceed\": false, \"reply_text\": \"\"}\n\nUse empty string for unknown fields. Set ready_to_proceed true only when all required fields for the detected intent are present. If not ready, reply_text is a short, friendly WhatsApp question asking for exactly what's missing (don't re-ask for things already known). If ready and intent is quote/book/status/faq, reply_text can be empty. If intent is \"other\", reply_text must always be filled in per the rules above.\n\nCustomer WhatsApp number: {{ $('Normalize Conversation Context').item.json.from }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1888,
+        2032
+      ],
+      "id": "1710174c-3f16-484c-bbac-72a2109d9fba",
+      "name": "Gemini - Classify Intent (Fallback)",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "maxTries": 3,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Gemini"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "wa_intent_review_log",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{  $('Parse WA Payload').item.json.from  }}"
+            },
+            {
+              "fieldId": "message_text",
+              "fieldValue": "={{  $('Parse WA Payload').item.json.text  }}"
+            },
+            {
+              "fieldId": "classified_intent",
+              "fieldValue": "={{  $json.intent  }}"
+            },
+            {
+              "fieldId": "reply_text",
+              "fieldValue": "={{  $json.reply_text  }}"
+            },
+            {
+              "fieldId": "used_fallback_model",
+              "fieldValue": "={{  $('Gemini - Classify Intent').item.json.error ? true : false  }}"
+            },
+            {
+              "fieldId": "primary_error",
+              "fieldValue": "={{  $('Gemini - Classify Intent').item.json.error || ''  }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        1840
+      ],
+      "id": "647ccb5f-1fc3-4de6-a4c5-1a6aa75bfd7f",
+      "name": "Log Ambiguous Intent",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "knowledge_documents",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "is",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        1792
+      ],
+      "id": "c15d74ad-a638-440c-a345-eb922b85fba9",
+      "name": "Get Knowledge Base Docs",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const docs = $input.all();\nconst parts = [];\nfor (const d of docs) {\nparts.push('### ' + d.json.title + '\\n' + d.json.content);\n}\nconst context = parts.join('\\n\\n');\nconst question = $('Parse Gemini Response').first().json.question;\nconst out = {};\nout.knowledge_context = context;\nout.question = question;\nreturn [{ json: out, pairedItem: docs.map((d, i) => ({ item: i })) }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        2576
+      ],
+      "id": "385288b8-8ca6-4486-b11c-e671c2aa0676",
+      "name": "Build Knowledge Context"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        2640
+      ],
+      "id": "fa42c0a9-64f5-4634-a85b-69d83862e52d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const from = $('Normalize Conversation Context').first().json.from;\nconst reply = $('Parse Gemini Response').first().json.reply_text ||\n  'Sorry, I can only help with questions about Acme Courier Co. deliveries - getting a quote, booking a pickup, checking an order status, or general questions about our service. Please choose an option below, or let me know how I can help.';\nreturn [{json: {from: from, reply_text: reply}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3744,
+        2032
+      ],
+      "id": "500ca795-24e2-4f2f-842a-619f534cbcbf",
+      "name": "Format Off-Topic Reply"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "<SECRET>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Normalize Conversation Context').item.json.from }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"list\",\n    \"header\": {\n      \"type\": \"text\",\n      \"text\": \"Acme Courier Co.\"\n    },\n    \"body\": {\n      \"text\": \"How can I help you today? Choose an option below, or just type your question.\"\n    },\n    \"footer\": {\n      \"text\": \"Acme Courier Co.\"\n    },\n    \"action\": {\n      \"button\": \"Menu\",\n      \"sections\": [\n        {\n          \"title\": \"Options\",\n          \"rows\": [\n            {\n              \"id\": \"menu_quote\",\n              \"title\": \"Get a Quote\",\n              \"description\": \"Get a delivery price estimate\"\n            },\n            {\n              \"id\": \"menu_book\",\n              \"title\": \"Book a Delivery\",\n              \"description\": \"Schedule a pickup\"\n            },\n            {\n              \"id\": \"menu_track\",\n              \"title\": \"Track an Order\",\n              \"description\": \"Check your delivery status\"\n            },\n            {\n              \"id\": \"menu_faq\",\n              \"title\": \"Ask a Question\",\n              \"description\": \"General questions about our service\"\n            }\n          ]\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4688,
+        3040
+      ],
+      "id": "fd1c519e-67f1-491e-ad8b-554e0821be2e",
+      "name": "Send WhatsApp Menu"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "87930c76-8d33-4e06-9934-b5d9a22ee1cf",
+              "leftValue": "={{ $('Normalize Conversation Context').item.json.hasExisting }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3936,
+        2832
+      ],
+      "id": "ed8083c8-2d9a-490c-a5cd-4af8741afc4e",
+      "name": "If - New Conversation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const from = $json.from;\nconst reply = 'Welcome to Acme Courier Co.! I can help you get a quote, book a delivery, track an order, or answer questions about our service. Choose an option below, or just tell me what you need.';\nreturn [{json: {from: from, reply_text: reply}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4688,
+        2672
+      ],
+      "id": "c355ae64-9601-4d27-a2e8-b22d4d918aab",
+      "name": "Format Welcome Reply"
+    },
+    {
+      "parameters": {
+        "tableId": "wa_conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{ $('Normalize Conversation Context').item.json.from }}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "="
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "collecting"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4816,
+        2848
+      ],
+      "id": "8b6a392d-3051-46a3-b69f-4489b7f84550",
+      "name": "Create Welcome Conversation Row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge the knowledge base into the conversation context so the classifier can answer FAQs in the same call.\n// Also: if the conversation has been idle > 30 min, start fresh (don't reuse old package/address/tier).\nconst base = $('Normalize Conversation Context').first().json;\nlet conv = {};\ntry { conv = ($('Get Conversation State').first() || {}).json || {}; } catch (e) { conv = {}; }\nconst ageMin = conv.updated_at ? (Date.now() - new Date(conv.updated_at).getTime()) / 60000 : 0;\nconst stale = ageMin > 30;\nconst priorSlotsJson = stale ? '{}' : base.priorSlotsJson;\nconst priorIntent = stale ? '' : base.priorIntent;\nconst docs = $input.all().map(i => i.json).filter(d => d && d.content && d.is_active !== false);\nconst knowledge_context = docs.length\n  ? docs.map(d => '### ' + (d.title || 'Info') + '\\n' + d.content).join('\\n\\n')\n  : '(knowledge base unavailable)';\nconst last_bot_reply = stale ? '' : String(conv.last_bot_reply || '');\nconst last_order_number = String(conv.last_order_number || '');\nreturn [{ json: { ...base, priorSlotsJson, priorIntent, conversation_stale: stale, last_bot_reply, last_order_number, knowledge_context }, pairedItem: { item: 0 } }];"
+      },
+      "id": "b1a2c3d4-0001-4a00-8000-000000000b01",
+      "name": "Build KB for Classifier",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1792
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FAQ answer now comes straight from the classifier's reply_text (knowledge base was in its prompt).\nconst from = $('Normalize Conversation Context').first().json.from;\nreturn $input.all().map((i, idx) => ({ pairedItem: { item: idx }, json: { from, reply_text: i.json.reply_text || \"Thanks for your question! Let me check with the team and get back to you shortly.\" } }));"
+      },
+      "id": "b1a2c3d4-0002-4a00-8000-000000000f02",
+      "name": "Format FAQ Reply (Direct)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3216,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize Conversation Context').item.json.from }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "intent",
+              "fieldValue": "={{ $json.intent === 'book' ? '' : $json.intent }}"
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={{ $json.intent === 'book' ? '{}' : JSON.stringify({package_size: $json.package_size, service_tier: $json.service_tier, pickup_address: $json.pickup_address, dropoff_address: $json.dropoff_address, customer_name: $json.customer_name, customer_phone: $json.customer_phone, customer_email: $json.customer_email, order_reference: $json.order_reference, question: $json.question}) }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "collecting"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "b1a2c3d4-0003-4a00-8000-000000005a1e",
+      "name": "Save Slots (Ready Path)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3760,
+        1760
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b1a2c3d4-0004-4a00-8000-00000000te51-c",
+              "leftValue": "={{ String($('Parse WA Payload').item.json.from || '') }}",
+              "rightValue": "999",
+              "operator": {
+                "type": "string",
+                "operation": "notStartsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b1a2c3d4-0004-4a00-8000-00000000te51",
+      "name": "If - Not Test Sender",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5632,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b1a2c3d4-0005-4a00-8000-00000000te52-c",
+              "leftValue": "={{ String($('Parse WA Payload').item.json.from || '') }}",
+              "rightValue": "999",
+              "operator": {
+                "type": "string",
+                "operation": "notStartsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b1a2c3d4-0005-4a00-8000-00000000te52",
+      "name": "If - Not Test Sender (Menu)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4352,
+        3056
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Deterministic safety net on top of the AI: normalise field values and never let a quote/booking\n// go ahead with missing or invalid details, whatever the model said.\nconst sizes = ['S', 'M', 'L', 'XL'];\nconst tiers = ['same_day_standard', 'same_day_express', 'next_day'];\nconst has = v => String(v == null ? '' : v).trim() !== '';\nreturn $input.all().map((item, idx) => {\n  const j = { ...item.json };\n  const size = String(j.package_size || '').trim().toUpperCase();\n  j.package_size = sizes.includes(size) ? size : '';\n  const tier = String(j.service_tier || '').trim().toLowerCase();\n  j.service_tier = tiers.includes(tier) ? tier : '';\n  // Context from this turn (sender number, raw text, previous intent)\n  let ctx = {};\n  try { ctx = $('Build KB for Classifier').first().json; } catch (err) { ctx = {}; }\n  if (!has(j.customer_phone) && has(ctx.from)) j.customer_phone = String(ctx.from);\n  // If we just asked for a name to book and the customer replied with only a name, keep booking.\n  const msg = String(ctx.text || '').trim();\n  const looksLikeName = /^[A-Za-z][A-Za-z .'-]{1,40}$/.test(msg) && msg.split(/\\s+/).length <= 4 && !/^(hi|hey|hello|thanks|thank you|ok|okay|yes|no|book|cancel|stop)$/i.test(msg);\n  if (j.intent === 'other' && ctx.priorIntent === 'book' && !has(j.customer_name) && looksLikeName) { j.intent = 'book'; j.customer_name = msg; }\n  if (j.intent === 'status' && !has(j.order_reference) && has(ctx.last_order_number)) j.order_reference = String(ctx.last_order_number);\n  // Cancellation: a plain \"yes\" right after our cancellation question confirms it (never trust the model alone).\n  const askedToConfirmCancel = /reply yes to confirm the cancellation/i.test(String(ctx.last_bot_reply || ''));\n  const saidYes = /^(yes|y|yes please|yeah|yep|yup|confirm|confirmed|go ahead|do it|ok|okay|sure|haan|han|ji)\\b/i.test(msg);\n  if (askedToConfirmCancel && saidYes) {\n    const m = String(ctx.last_bot_reply).match(/Order\\s+([0-9A-Za-z-]+)/i);\n    j.intent = 'cancel'; if (m) j.order_reference = m[1];\n  }\n  if (j.intent === 'cancel') {\n    j.cancel_confirmed = askedToConfirmCancel && saidYes;\n    if (!has(j.order_reference) && has(ctx.last_order_number)) j.order_reference = String(ctx.last_order_number);\n  }\n  const em = String(j.customer_email || '').trim().toLowerCase();\n  j.customer_email = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(em) ? em : '';\n  // Optional email before booking: ask once, then book whatever the answer (\"skip\", \"no\", or an address).\n  const lastReply = String(ctx.last_bot_reply || '');\n  const askedEmail = /confirmation by email/i.test(lastReply);\n  const emailInMsg = (msg.match(/[^\\s@]+@[^\\s@]+\\.[a-z]{2,}/i) || [])[0];\n  if (!j.customer_email && emailInMsg) j.customer_email = emailInMsg.toLowerCase();\n  if (askedEmail && ctx.priorIntent === 'book' && j.intent !== 'cancel' && j.intent !== 'status') {\n    j.intent = 'book';\n    let prior = {};\n    try { let s = ctx.priorSlotsJson; while (typeof s === 'string') s = JSON.parse(s); prior = s || {}; } catch (err) { prior = {}; }\n    for (const k of ['package_size', 'service_tier', 'pickup_address', 'dropoff_address', 'customer_name']) if (!has(j[k]) && has(prior[k])) j[k] = prior[k];\n    if (j.package_size) j.package_size = String(j.package_size).toUpperCase();\n  }\n  // Booking confirmation: a YES right after our booking summary books it (details re-applied from memory).\n  const askedConfirmBooking = /reply yes to confirm the booking/i.test(lastReply);\n  const saidYesBook = /^(yes|y|yes please|yeah|yep|yup|confirm|confirmed|correct|go ahead|book it|do it|ok|okay|sure|haan|han|ji)\\b/i.test(msg);\n  if (askedConfirmBooking && saidYesBook) {\n    j.intent = 'book';\n    j.booking_confirmed = true;\n    let priorB = {};\n    try { let s = ctx.priorSlotsJson; while (typeof s === 'string') s = JSON.parse(s); priorB = s || {}; } catch (err) { priorB = {}; }\n    for (const k of ['package_size', 'service_tier', 'pickup_address', 'dropoff_address', 'customer_name', 'customer_email']) if (!has(j[k]) && has(priorB[k])) j[k] = priorB[k];\n    if (j.package_size) j.package_size = String(j.package_size).toUpperCase();\n  } else if (askedConfirmBooking && !['cancel', 'status', 'faq'].includes(j.intent)) {\n    // A change requested at the summary (\"make it express\", \"different address\"): keep booking, re-summarise.\n    j.intent = 'book';\n    let priorC = {};\n    try { let s = ctx.priorSlotsJson; while (typeof s === 'string') s = JSON.parse(s); priorC = s || {}; } catch (err) { priorC = {}; }\n    for (const k of ['package_size', 'service_tier', 'pickup_address', 'dropoff_address', 'customer_name', 'customer_email']) if (!has(j[k]) && has(priorC[k])) j[k] = priorC[k];\n    if (j.package_size) j.package_size = String(j.package_size).toUpperCase();\n  }\n  const missing = [];\n  if (j.intent === 'quote' || j.intent === 'book') {\n    if (!j.package_size) missing.push('the package size (small, medium, large or extra-large)');\n    if (!has(j.pickup_address)) missing.push('the pickup address');\n    if (!has(j.dropoff_address)) missing.push('the drop-off address');\n    if (!j.service_tier) missing.push('which service you would like (Same-Day Standard, Same-Day Express or Next-Day)');\n  }\n  if (j.intent === 'book' && !has(j.customer_name)) missing.push('the name to put on the booking');\n  if ((j.intent === 'status' || j.intent === 'cancel') && !has(j.order_reference)) missing.push('your order number (the confirmation number from your booking)');\n  j.missing_fields = missing;\n  const ask = () => (j.intent === 'status' ? 'Sure, I can check that for you! Could you share ' : 'Almost there! Could you share ') + (missing.length === 1 ? missing[0] : missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1]) + '?';\n  if (j.intent === 'quote' || j.intent === 'book' || j.intent === 'status' || j.intent === 'cancel') {\n    // Readiness is decided by the data, not the model: go ahead exactly when nothing is missing.\n    if (missing.length) {\n      if (j.ready_to_proceed === true || !has(j.reply_text)) j.reply_text = ask();\n      j.ready_to_proceed = false;\n    } else {\n      j.ready_to_proceed = true;\n    }\n  }\n  if (j.intent === 'book' && j.ready_to_proceed === true && !j.customer_email && !askedEmail && !askedConfirmBooking && !j.booking_confirmed) {\n    const first = String(j.customer_name || '').trim().split(/\\s+/)[0];\n    j.ready_to_proceed = false;\n    j.reply_text = 'Almost done' + (first ? ', ' + first : '') + '! Would you like a confirmation by email? Just share your email address, or reply \"skip\" to book without it.';\n  }\n  // Everything collected but not yet confirmed: show a summary with the price (quote route) and ask for YES.\n  if (j.intent === 'book' && j.ready_to_proceed === true && !j.booking_confirmed) {\n    j.intent = 'quote';\n    j.book_pending = true;\n  }\n  if (j.ready_to_proceed !== true && !has(j.reply_text)) {\n    j.reply_text = missing.length ? 'Could you share ' + missing.join(', ') + '?' : 'How can I help you today? I can give you a quote, book a delivery, track an order or answer questions.';\n  }\n  return { json: j, pairedItem: { item: idx } };\n});"
+      },
+      "id": "b1a2c3d4-0006-4a00-8000-00000000e0f6",
+      "name": "Enforce Required Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        1968
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Parse WA Payload').item.json.from }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "last_bot_reply",
+              "fieldValue": "={{ $json.reply_text }}"
+            }
+          ]
+        }
+      },
+      "id": "b1a2c3d4-0007-4a00-8000-0000000la57r",
+      "name": "Save Last Bot Reply",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5632,
+        1952
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "wa_conversations",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Parse WA Payload').item.json.from }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "last_order_number",
+              "fieldValue": "={{ $('HTTP - Book Order').item.json.order_id || $('Build KB for Classifier').item.json.last_order_number || '' }}"
+            }
+          ]
+        }
+      },
+      "id": "b1a2c3d4-0008-4a00-8000-0000000la570",
+      "name": "Save Last Order Number",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4400,
+        1424
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs after an order is saved (WhatsApp or voice). Builds the HubSpot contact + deal. Test numbers (999...) are skipped.\nconst norm = v => { let d = String(v || '').replace(/\\D/g, ''); if (d.length === 10) d = '1' + d; return d; };\nconst row = $input.first().json;\nif (!row || row.error || !row.order_number) return [];\nconst phone = norm(row.customer_phone);\nif (!phone || phone.startsWith('999')) return [];\nconst channel = row.intake_channel === 'whatsapp' ? 'WhatsApp' : 'Voice';\nconst name = String(row.customer_name || '').trim();\nconst parts = name.split(/\\s+/).filter(Boolean);\nconst sizeNames = { S: 'Small', M: 'Medium', L: 'Large', XL: 'Extra-large' };\nconst tierNames = { same_day_standard: 'Same-Day Standard', same_day_express: 'Same-Day Express', next_day: 'Next-Day' };\nconst contactProps = { acme_customer_phone: phone, phone: '+' + phone, acme_last_channel: channel };\nif (parts.length) { contactProps.firstname = parts[0]; if (parts.length > 1) contactProps.lastname = parts.slice(1).join(' '); }\nconst deal = { idProperty: 'acme_order_number', id: String(row.order_number), properties: {\n  acme_order_number: String(row.order_number),\n  dealname: 'Order ' + row.order_number + ' · ' + (sizeNames[row.package_size] || row.package_size || '') + ' · ' + (tierNames[row.service_tier] || row.service_tier || ''),\n  amount: row.quoted_price_cad != null ? String(row.quoted_price_cad) : '',\n  pipeline: 'default', dealstage: ({ quoted: '4359622340', pending: '4359622341', confirmed: '4359622341', in_transit: '4359622342', delivered: '4359622343', cancelled: '4359622344' })[row.status] || '4359622341', closedate: new Date().toISOString(),\n  acme_pickup_address: row.pickup_address || '', acme_dropoff_address: row.dropoff_address || '',\n  acme_package_size: sizeNames[row.package_size] || row.package_size || '', acme_service_tier: tierNames[row.service_tier] || row.service_tier || '',\n  acme_channel: channel } };\nreturn [{ json: { contact: { idProperty: 'acme_customer_phone', id: phone, properties: contactProps }, deal }, pairedItem: { item: 0 } }];"
+      },
+      "id": "hs100000-0000-4000-8000-000000000001",
+      "name": "HubSpot - Prepare Booking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        768
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: [ $json.contact ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs100000-0000-4000-8000-000000000002",
+      "name": "HubSpot - Upsert Contact (Booking)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        768
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/deals/batch/upsert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: [ $('HubSpot - Prepare Booking').item.json.deal ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs100000-0000-4000-8000-000000000003",
+      "name": "HubSpot - Upsert Deal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2144,
+        768
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.hubapi.com/crm/v4/objects/deals/' + $json.results[0].id + '/associations/default/contacts/' + $('HubSpot - Upsert Contact (Booking)').item.json.results[0].id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs100000-0000-4000-8000-000000000004",
+      "name": "HubSpot - Link Deal to Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2368,
+        768
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// New WhatsApp conversation -> HubSpot contact (name from the WhatsApp profile, if any). Test numbers skipped.\nconst norm = v => { let d = String(v || '').replace(/\\D/g, ''); if (d.length === 10) d = '1' + d; return d; };\nconst phone = norm($('Parse WA Payload').first().json.from);\nif (!phone || phone.startsWith('999')) return [];\nlet profileName = '';\ntry { profileName = String($('Webhook - WhatsApp Receive').first().json.body.entry[0].changes[0].value.contacts[0].profile.name || '').trim(); } catch (e) { profileName = ''; }\nconst props = { acme_customer_phone: phone, phone: '+' + phone, acme_first_channel: 'WhatsApp', acme_last_channel: 'WhatsApp' };\nconst parts = profileName.split(/\\s+/).filter(Boolean);\nif (parts.length) { props.firstname = parts[0]; if (parts.length > 1) props.lastname = parts.slice(1).join(' '); }\nreturn [{ json: { contact: { idProperty: 'acme_customer_phone', id: phone, properties: props } }, pairedItem: { item: 0 } }];"
+      },
+      "id": "hs100000-0000-4000-8000-000000000005",
+      "name": "HubSpot - Prepare WhatsApp Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5024,
+        2976
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: [ $json.contact ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs100000-0000-4000-8000-000000000006",
+      "name": "HubSpot - Upsert Contact (WhatsApp)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5264,
+        2976
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Voice agent call analysed -> HubSpot contact for the caller. Web/test calls without a phone number are skipped.\nconst norm = v => { let d = String(v || '').replace(/\\D/g, ''); if (d.length === 10) d = '1' + d; return d; };\nconst call = ($input.first().json.body || {}).call || {};\nconst phone = norm(call.direction === 'outbound' ? call.to_number : call.from_number);\nif (!phone || phone.startsWith('999')) return [];\nconst a = call.call_analysis || {};\nconst esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst secs = Math.round((call.duration_ms || 0) / 1000);\nconst transcript = String(call.transcript || '').slice(0, 20000);\nconst note = '<p><strong>Voice agent call</strong> (' + (call.direction || 'inbound') + ', ' + Math.floor(secs / 60) + 'm ' + (secs % 60) + 's)</p>'\n  + '<p><strong>Outcome:</strong> ' + (a.call_successful ? 'Successful' : 'Not successful') + (a.user_sentiment ? ' | <strong>Sentiment:</strong> ' + esc(a.user_sentiment) : '') + '</p>'\n  + (a.call_summary ? '<p><strong>Summary:</strong> ' + esc(a.call_summary) + '</p>' : '')\n  + (transcript ? '<p><strong>Transcript:</strong><br>' + esc(transcript).replace(/\\n/g, '<br>') + '</p>' : '');\nreturn [{ json: { note, contact: { idProperty: 'acme_customer_phone', id: phone, properties: { acme_customer_phone: phone, phone: '+' + phone, acme_last_channel: 'Voice' } } }, pairedItem: { item: 0 } }];"
+      },
+      "id": "hs100000-0000-4000-8000-000000000007",
+      "name": "HubSpot - Prepare Voice Contact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -64
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: [ $json.contact ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs100000-0000-4000-8000-000000000008",
+      "name": "HubSpot - Upsert Contact (Voice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        -64
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/notes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ properties: { hs_timestamp: new Date().toISOString(), hs_note_body: $('HubSpot - Prepare Voice Contact').item.json.note }, associations: [ { to: { id: $json.results[0].id }, types: [ { associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 } ] } ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs200000-0000-4000-8000-000000000001",
+      "name": "HubSpot - Log Call Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1712,
+        -64
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/order-status-changed",
+        "options": {}
+      },
+      "id": "hs200000-0000-4000-8000-000000000002",
+      "name": "Webhook - Order Status Changed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        1136
+      ],
+      "webhookId": "32e32bbf-d82f-42ff-9ae9-8998a95bd982"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Called by a Supabase trigger whenever orders.status changes. Moves the matching HubSpot deal to the right stage.\nconst SECRET = '<WEBHOOK_SECRET>';\nconst req = $input.first().json;\nif (((req.headers || {})['x-acme-secret'] || '') !== SECRET) return [];\nconst b = req.body || {};\nif (b.event === 'created') return [];\nconst stages = { quoted: '4359622340', pending: '4359622341', confirmed: '4359622341', in_transit: '4359622342', delivered: '4359622343', cancelled: '4359622344' };\nconst stage = stages[b.new_status];\nif (!b.order_number || !stage || b.new_status === b.old_status) return [];\nreturn [{ json: { order_number: String(b.order_number), old_status: b.old_status, new_status: b.new_status, update: { idProperty: 'acme_order_number', id: String(b.order_number), properties: { dealstage: stage } } }, pairedItem: { item: 0 } }];"
+      },
+      "id": "hs200000-0000-4000-8000-000000000003",
+      "name": "HubSpot - Map Order Stage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1056
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/deals/batch/update",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hubspotAppToken",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: [ $json.update ] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "hs200000-0000-4000-8000-000000000004",
+      "name": "HubSpot - Update Deal Stage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        1056
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "Hubspot_Acme"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme/cancel-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "cx000000-0000-4000-8000-000000000001",
+      "name": "Webhook - Cancel Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        1568
+      ],
+      "webhookId": "cc6d80c3-8b9d-4c2a-a47f-718994c36377"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "order_number",
+              "condition": "eq",
+              "keyValue": "={{ String(($json.body.args || {}).order_reference || 'none').replace(/[^0-9A-Za-z-]/g, '') || 'none' }}"
+            }
+          ]
+        }
+      },
+      "id": "cx000000-0000-4000-8000-000000000002",
+      "name": "Get Order for Cancel",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        1568
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Company cancellation policy (knowledge base \"Cancellation & Rebooking Policy\"):\n// free before a driver is assigned; $10 CAD once a driver is assigned / en route to pickup;\n// full quoted rate once picked up (in_transit); delivered or already-cancelled orders can't be cancelled.\nconst req = $('Webhook - Cancel Order').first().json;\nconst body = req.body || {};\nconst args = body.args || {};\nconst query = req.query || {};\nconst ref = String(args.order_reference || '').replace(/[^0-9A-Za-z-]/g, '');\nconst confirm = args.confirm === true || args.confirm === 'true' || query.confirm === '1';\nconst channel = args.channel || (body.call ? 'phone' : 'api');\n// Prefer the real caller number from the voice platform over anything the AI passed.\nconst askerPhone = (body.call && (body.call.direction === 'outbound' ? body.call.to_number : body.call.from_number)) || args.customer_phone || '';\nconst last10 = v => String(v || '').replace(/\\D/g, '').slice(-10);\nconst rows = $input.all().map(i => i.json).filter(r => r && r.order_number);\nconst out = o => [{ json: Object.assign({ order_number: ref, confirm, channel, can_cancel: false, do_cancel: false, cancelled: false, fee: 0 }, o), pairedItem: { item: 0 } }];\nif (!ref) return out({ reason: 'no_reference', message: 'Which order would you like to cancel? Please share the order number from your booking confirmation.' });\nconst row = rows[0];\nif (!row) return out({ reason: 'not_found', message: \"I couldn't find order \" + ref + '. Could you double-check the order number?' });\nif (last10(askerPhone) && last10(row.customer_phone) && last10(askerPhone) !== last10(row.customer_phone)) {\n  return out({ reason: 'phone_mismatch', message: 'For security, an order can only be cancelled from the phone number it was booked with. Please contact us from that number.' });\n}\nif (row.status === 'cancelled') return out({ reason: 'already_cancelled', message: 'Order ' + ref + ' is already cancelled.' });\nif (row.status === 'delivered') return out({ reason: 'delivered', message: 'Order ' + ref + ' has already been delivered, so it can no longer be cancelled.' });\nconst route = (row.pickup_address || '?') + ' to ' + (row.dropoff_address || '?');\nconst price = Number(row.quoted_price_cad || 0);\nlet fee = 0, why = '';\nif (row.status === 'in_transit') { fee = price; why = 'the package has already been picked up, so the full quoted rate of $' + price.toFixed(2) + ' CAD is charged'; }\nelse if (row.assigned_driver_id) { fee = 10; why = 'a driver is already assigned and on the way to pickup, so a $10.00 CAD cancellation fee applies'; }\nconst terms = fee > 0 ? 'cancelling now has a charge: ' + why + '.' : 'it can be cancelled free of charge.';\nconst base = { can_cancel: true, fee, status: row.status, route, fee_reason: why };\nif (!confirm) return out(Object.assign(base, { reason: 'needs_confirmation', message: 'Order ' + ref + ' (' + route + '): ' + terms + ' Reply YES to confirm the cancellation.' }));\nreturn out(Object.assign(base, { reason: 'confirmed', do_cancel: true }));"
+      },
+      "id": "cx000000-0000-4000-8000-000000000003",
+      "name": "Evaluate Cancellation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cx-do",
+              "leftValue": "={{ $json.do_cancel }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "cx000000-0000-4000-8000-000000000004",
+      "name": "If - Do Cancel",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "orders",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "order_number",
+              "condition": "eq",
+              "keyValue": "={{ $json.order_number }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "cancelled"
+            },
+            {
+              "fieldId": "cancellation_fee_cad",
+              "fieldValue": "={{ $json.fee }}"
+            },
+            {
+              "fieldId": "cancelled_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "cancelled_via",
+              "fieldValue": "={{ $json.channel }}"
+            }
+          ]
+        }
+      },
+      "id": "cx000000-0000-4000-8000-000000000005",
+      "name": "Cancel Order Row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        128,
+        1520
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const e = $('Evaluate Cancellation').first().json;\nconst upd = $input.first().json || {};\nconst ok = !upd.error && upd.status === 'cancelled';\nconst message = ok\n  ? 'Order ' + e.order_number + ' has been cancelled. ' + (e.fee > 0 ? 'A cancellation charge of $' + Number(e.fee).toFixed(2) + ' CAD applies (' + e.fee_reason.replace(/, so .*/, '') + ').' : 'No charge applies.') + ' You can rebook any time; it will be treated as a new booking with a new quote.'\n  : 'Sorry, something went wrong cancelling order ' + e.order_number + '. Please try again or contact support.';\nreturn [{ json: Object.assign({}, e, { cancelled: ok, message }), pairedItem: { item: 0 } }];"
+      },
+      "id": "cx000000-0000-4000-8000-000000000006",
+      "name": "Build Cancel Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "cx000000-0000-4000-8000-000000000007",
+      "name": "Respond to Webhook - Cancel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://<N8N_HOST>/webhook/acme/cancel-order",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ args: { order_reference: $json.order_reference, customer_phone: $json.customer_phone, confirm: $json.cancel_confirmed === true, channel: 'whatsapp' } }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "cx000000-0000-4000-8000-000000000011",
+      "name": "HTTP - Cancel Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3216,
+        1952
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json || {};\nconst from = $('Normalize Conversation Context').first().json.from;\nconst reply = r.message || 'Sorry, I could not process that cancellation right now. Please try again in a minute.';\nreturn [{ json: { from, reply_text: reply }, pairedItem: { item: 0 } }];"
+      },
+      "id": "cx000000-0000-4000-8000-000000000012",
+      "name": "Format Cancel Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        1952
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decides which customer email (if any) an order event should trigger.\nconst SECRET = '<WEBHOOK_SECRET>';\nconst req = $input.first().json;\nif (((req.headers || {})['x-acme-secret'] || '') !== SECRET) return [];\nconst b = req.body || {};\nlet type = null;\nif (b.event === 'created' && ['confirmed', 'pending'].includes(b.new_status)) type = 'booking_confirmation';\nelse if (b.event === 'status_changed' && b.new_status === 'in_transit') type = 'in_transit';\nelse if (b.event === 'status_changed' && b.new_status === 'delivered') type = 'delivered_receipt';\nelse if (b.event === 'status_changed' && b.new_status === 'cancelled') type = 'cancellation';\nif (!type || !b.order_number) return [];\nreturn [{ json: { order_number: String(b.order_number), email_type: type }, pairedItem: { item: 0 } }];"
+      },
+      "id": "em000000-0000-4000-8000-000000000001",
+      "name": "Email - Check Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "order_number",
+              "condition": "eq",
+              "keyValue": "={{ $json.order_number }}"
+            }
+          ]
+        }
+      },
+      "id": "em000000-0000-4000-8000-000000000002",
+      "name": "Email - Get Order",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        256,
+        1232
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branded customer email for each order event. Skips orders without a valid email.\nconst SENDER = { name: 'Acme Courier Co.', email: '<EMAIL>' }; // demo Gmail sender (SMTP node sets the real From)\nconst ev = $('Email - Check Event').first().json;\nconst o = $input.first().json || {};\nconst to = String(o.customer_email || '').trim();\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(to)) return [];\nconst esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst sizes = { S: 'Small', M: 'Medium', L: 'Large', XL: 'Extra-large' };\nconst tiers = { same_day_standard: 'Same-Day Standard', same_day_express: 'Same-Day Express', next_day: 'Next-Day' };\nconst money = v => '$' + Number(v || 0).toFixed(2) + ' CAD';\nconst name = String(o.customer_name || '').trim().split(/\\s+/)[0] || 'there';\nconst n = o.order_number;\nconst details = [['Order number', n], ['Pickup', o.pickup_address], ['Drop-off', o.dropoff_address], ['Package', sizes[o.package_size] || o.package_size], ['Service', tiers[o.service_tier] || o.service_tier]];\nlet subject, intro, extraRows = [], outro;\nswitch (ev.email_type) {\n  case 'booking_confirmation':\n    subject = 'Booking confirmed: order ' + n;\n    intro = 'Thanks for booking with Acme Courier Co. Your delivery is confirmed.';\n    extraRows = [['Quoted price', money(o.quoted_price_cad)]];\n    outro = 'To check on your delivery or cancel, just message us on WhatsApp or call us with your order number. Cancellations are free until a driver is assigned.';\n    break;\n  case 'in_transit':\n    subject = 'Your package is on its way: order ' + n;\n    intro = 'Good news, your package has been picked up and is on its way.';\n    outro = 'We will email you again as soon as it is delivered.';\n    break;\n  case 'delivered_receipt':\n    subject = 'Delivered: receipt for order ' + n;\n    intro = 'Your package has been delivered. Here is your receipt.';\n    extraRows = [['Delivered', o.actual_delivery_timestamp ? new Date(o.actual_delivery_timestamp).toLocaleString('en-CA', { timeZone: 'America/Toronto' }) : 'Today'], ['Amount charged', money(o.quoted_price_cad)]];\n    outro = 'Thank you for choosing Acme Courier Co.';\n    break;\n  case 'cancellation':\n    subject = 'Order ' + n + ' cancelled';\n    intro = 'Your order has been cancelled as requested.';\n    extraRows = [['Cancellation charge', Number(o.cancellation_fee_cad || 0) > 0 ? money(o.cancellation_fee_cad) : 'No charge']];\n    outro = 'You can rebook any time. It will be treated as a new booking with a new quote.';\n    break;\n  default: return [];\n}\nconst rows = details.concat(extraRows).filter(r => r[1]);\nconst html = '<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937\">'\n  + '<div style=\"background:#0f766e;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0;font-size:18px;font-weight:bold\">Acme Courier Co.</div>'\n  + '<div style=\"border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px\">'\n  + '<p>Hi ' + esc(name) + ',</p><p>' + esc(intro) + '</p>'\n  + '<table style=\"width:100%;border-collapse:collapse;margin:12px 0\">' + rows.map(r => '<tr><td style=\"padding:6px 0;color:#6b7280;width:40%\">' + esc(r[0]) + '</td><td style=\"padding:6px 0;font-weight:bold\">' + esc(r[1]) + '</td></tr>').join('') + '</table>'\n  + '<p>' + esc(outro) + '</p><p style=\"color:#6b7280;font-size:12px;margin-top:24px\">Acme Courier Co. · Greater Toronto Area</p></div></div>';\nconst text = 'Hi ' + name + ',\\n\\n' + intro + '\\n\\n' + rows.map(r => r[0] + ': ' + r[1]).join('\\n') + '\\n\\n' + outro + '\\n\\nAcme Courier Co.';\nreturn [{ json: { order_number: n, email_type: ev.email_type, to_email: to, brevo: { sender: SENDER, to: [{ email: to, name: String(o.customer_name || '').trim() || undefined }], subject, htmlContent: html, textContent: text, tags: ['acme', ev.email_type] } }, pairedItem: { item: 0 } }];"
+      },
+      "id": "em000000-0000-4000-8000-000000000003",
+      "name": "Email - Build Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.brevo) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "em000000-0000-4000-8000-000000000004",
+      "name": "Email - Send (Brevo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -896,
+        1072
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "email_log",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "order_number",
+              "fieldValue": "={{ $('Email - Build Message').item.json.order_number }}"
+            },
+            {
+              "fieldId": "event",
+              "fieldValue": "={{ $('Email - Build Message').item.json.email_type }}"
+            },
+            {
+              "fieldId": "to_email",
+              "fieldValue": "={{ $('Email - Build Message').item.json.to_email }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ ($json.messageId || $json.id || (Array.isArray($json.accepted) && $json.accepted.length)) ? 'sent' : ($json.error ? 'failed' : 'not_sent') }}"
+            },
+            {
+              "fieldId": "provider_message_id",
+              "fieldValue": "={{ $json.messageId || $json.id || '' }}"
+            },
+            {
+              "fieldId": "error",
+              "fieldValue": "={{ $json.error ? JSON.stringify($json.error).slice(0, 500) : '' }}"
+            }
+          ]
+        }
+      },
+      "id": "em000000-0000-4000-8000-000000000005",
+      "name": "Email - Log",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        864,
+        1232
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://nominatim.openstreetmap.org/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "jsonv2"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            },
+            {
+              "name": "countrycodes",
+              "value": "ca"
+            },
+            {
+              "name": "q",
+              "value": "={{ (() => { const a = String(($('Webhook - Get Quote').item.json.body.args || {}).pickup_address || '').trim(); if (/usa|u\\.s\\.|united states|\\bny\\b|new york|buffalo|detroit|montreal|quebec|vancouver|calgary|edmonton|winnipeg|ottawa|hamilton|niagara|kitchener|waterloo|london,? on|barrie|kingston/i.test(a)) return a; return a + (/mississauga|brampton|markham|vaughan|scarborough|etobicoke|north york|richmond hill|pickering|ajax|oakville|east york/i.test(a) ? ', Ontario, Canada' : (/toronto/i.test(a) ? ', Ontario, Canada' : ', Toronto, Ontario, Canada')); })() }}"
+            },
+            {
+              "name": "viewbox",
+              "value": "-79.95,44.05,-78.95,43.45"
+            },
+            {
+              "name": "bounded",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "NexordisAcmeCourierDemo/1.0"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 8000
+        }
+      },
+      "id": "zn000000-0000-4000-8000-000000000001",
+      "name": "Geocode Pickup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -384,
+        416
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1100,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://nominatim.openstreetmap.org/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "jsonv2"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            },
+            {
+              "name": "countrycodes",
+              "value": "ca"
+            },
+            {
+              "name": "q",
+              "value": "={{ (() => { const a = String(($('Webhook - Get Quote').item.json.body.args || {}).dropoff_address || '').trim(); if (/usa|u\\.s\\.|united states|\\bny\\b|new york|buffalo|detroit|montreal|quebec|vancouver|calgary|edmonton|winnipeg|ottawa|hamilton|niagara|kitchener|waterloo|london,? on|barrie|kingston/i.test(a)) return a; return a + (/mississauga|brampton|markham|vaughan|scarborough|etobicoke|north york|richmond hill|pickering|ajax|oakville|east york/i.test(a) ? ', Ontario, Canada' : (/toronto/i.test(a) ? ', Ontario, Canada' : ', Toronto, Ontario, Canada')); })() }}"
+            },
+            {
+              "name": "viewbox",
+              "value": "-79.95,44.05,-78.95,43.45"
+            },
+            {
+              "name": "bounded",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "NexordisAcmeCourierDemo/1.0"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 8000
+        }
+      },
+      "id": "zn000000-0000-4000-8000-000000000002",
+      "name": "Geocode Drop-off",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        416
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1100,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Zone = distance band from the depot (downtown Toronto, M5V), per the KB \"Service Area & Coverage\".\n// The trip is priced on the farther of pickup / drop-off. Outside the GTA = out of area (KB policy).\nconst DEPOT = { lat: 43.6426, lon: -79.3871 };\nconst BANDS = [ { zone: 1, km: 4 }, { zone: 2, km: 10 }, { zone: 3, km: 20 }, { zone: 4, km: 50 } ];\nconst args = $('Webhook - Get Quote').first().json.body.args || {};\nconst km = (a, b) => { const R = 6371, r = d => d * Math.PI / 180; const dLat = r(b.lat - a.lat), dLon = r(b.lon - a.lon); const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };\nconst hit = n => { try { const j = $(n).first().json; return j && j.lat ? { lat: Number(j.lat), lon: Number(j.lon), label: j.display_name || '' } : null; } catch (e) { return null; } };\n// Fallback when an address can't be geocoded: estimate from place names.\nconst OUT_RE = /usa|u\\.s\\.|united states|\\bny\\b|new york|buffalo|detroit|montreal|quebec|vancouver|calgary|edmonton|winnipeg|ottawa|hamilton|niagara|kitchener|waterloo|london,? on|barrie|kingston/i;\nconst guess = addr => { const a = String(addr || '').toLowerCase();\n  if (OUT_RE.test(a)) return -1;\n  if (/mississauga|brampton|markham|vaughan|richmond hill|pickering|ajax|oakville/.test(a)) return 4;\n  if (/scarborough|etobicoke|north york/.test(a)) return 3;\n  if (/east york|\\byork\\b|leaside|the beaches|high park|midtown/.test(a)) return 2;\n  if (/\\bm5[a-z]/i.test(a)) return 1;\n  return 2; };\nconst zoneFor = (addr, g) => { if (!g) { const gz = guess(addr); return gz < 0 ? { zone: null, km: null, basis: 'estimated', out: true } : { zone: gz, km: null, basis: 'estimated' }; }\n  const d = km(DEPOT, g); const band = BANDS.find(b => d <= b.km);\n  return { zone: band ? band.zone : null, km: Math.round(d * 10) / 10, basis: 'geocoded', out: !band || !/ontario/i.test(g.label) }; };\nconst p = zoneFor(args.pickup_address, hit('Geocode Pickup'));\nconst d = zoneFor(args.dropoff_address, hit('Geocode Drop-off'));\nconst out_of_area = !!(p.out || d.out);\nconst zone = out_of_area ? 0 : Math.max(p.zone || 1, d.zone || 1);\nreturn [{ json: { zone, out_of_area, pickup_zone: p.zone, dropoff_zone: d.zone, pickup_km: p.km, dropoff_km: d.km, basis: p.basis === 'geocoded' && d.basis === 'geocoded' ? 'geocoded' : 'estimated',\n  message: out_of_area ? 'Sorry, that address is outside our service area. Acme Courier Co. only delivers within the Greater Toronto Area. For other destinations, a national or international courier would be the best option.' : '' }, pairedItem: { item: 0 } }];"
+      },
+      "id": "zn000000-0000-4000-8000-000000000003",
+      "name": "Determine Zone",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to_email }}",
+        "subject": "={{ $json.brevo.subject }}",
+        "message": "={{ $json.brevo.htmlContent }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Acme Courier Co."
+        }
+      },
+      "id": "em000000-0000-4000-8000-000000000006",
+      "name": "Email - Send (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        1280
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "webhookId": "74c01af4-26c4-481c-bcca-ec50b6b2d317",
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fromEmail": "\"Acme Courier Co.\" <<EMAIL>>",
+        "toEmail": "={{ $json.to_email }}",
+        "subject": "={{ $json.brevo.subject }}",
+        "emailFormat": "both",
+        "text": "={{ $json.brevo.textContent }}",
+        "html": "={{ $json.brevo.htmlContent }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em000000-0000-4000-8000-000000000007",
+      "name": "Email - Send (SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        1232
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "webhookId": "819aa2b8-64d3-45ab-8cb3-b1fc0a8175fe",
+      "credentials": {
+        "smtp": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "SMTP account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ng-c1",
+              "leftValue": "={{ (() => { const p = $('Parse WA Payload').item.json; const t = String(p.text || '').trim(); if (p.isListSelection) return false; return t === '' || /^(hi+|hello+|hey+|hiya|yo|salam|assalam[ou]? ?alaikum|aoa|good (morning|afternoon|evening)|start|menu|help)[\\s!.,?]*$/i.test(t); })() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "ng000000-0000-4000-8000-000000000001",
+      "name": "If - Just Greeting",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4160,
+        2976
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "wa_conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "company_id",
+              "fieldValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{ $('Normalize Conversation Context').item.json.from }}"
+            },
+            {
+              "fieldId": "intent",
+              "fieldValue": "="
+            },
+            {
+              "fieldId": "slots",
+              "fieldValue": "={}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "collecting"
+            }
+          ]
+        }
+      },
+      "id": "ng000000-0000-4000-8000-000000000002",
+      "name": "Create Conversation Row (Request)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4816,
+        3280
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retell call_analyzed: was this a missed / failed / abandoned call worth a WhatsApp follow-up?\nconst call = (($input.first().json || {}).body || {}).call || {};\nconst a = call.call_analysis || {};\nconst reason = String(call.disconnection_reason || '');\nconst raw = call.direction === 'outbound' ? call.to_number : call.from_number;\nlet phone = String(raw || '').replace(/\\D/g, '');\nif (phone.length === 10) phone = '1' + phone;\nif (!phone || phone.startsWith('999')) return [];                 // web/test calls have no real number\nconst secs = Math.round((call.duration_ms || 0) / 1000);\nconst failed = /dial_no_answer|dial_busy|dial_failed|error|machine_detected|voicemail|inactivity|max_duration|registered_call_timeout|concurrency/i.test(reason);\nconst unsuccessful = failed || a.call_successful === false || (reason === 'user_hangup' && secs < 30);\nif (!unsuccessful) return [];\nconst since = call.start_timestamp ? new Date(call.start_timestamp).toISOString() : new Date(Date.now() - 3600000).toISOString();\nreturn [{ json: { phone, call_id: call.call_id || '', reason: reason || 'unsuccessful', secs, since }, pairedItem: { item: 0 } }];"
+      },
+      "id": "mc000000-0000-4000-8000-000000000001",
+      "name": "Missed Call - Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "company_id",
+              "condition": "eq",
+              "keyValue": "e9937002-053d-4f65-8274-b3c2d6eb8037"
+            },
+            {
+              "keyName": "created_at",
+              "condition": "gte",
+              "keyValue": "={{ $json.since }}"
+            }
+          ]
+        }
+      },
+      "id": "mc000000-0000-4000-8000-000000000002",
+      "name": "Missed Call - Orders Since Call",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        384
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "missed_call_followups",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_phone",
+              "condition": "eq",
+              "keyValue": "={{ $('Missed Call - Check').first().json.phone }}"
+            },
+            {
+              "keyName": "created_at",
+              "condition": "gte",
+              "keyValue": "={{ $now.minus({ hours: 24 }).toISO() }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "sent"
+            }
+          ]
+        }
+      },
+      "id": "mc000000-0000-4000-8000-000000000003",
+      "name": "Missed Call - Recent Follow-ups",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        464
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Only follow up if nothing was booked on this call and we haven't messaged this number in the last 24h.\nconst TEMPLATE = 'missed_call_followup';   // Meta-approved WhatsApp template (Utility)\nconst LANG = 'en';                          // must match the template's language code in WhatsApp Manager\nconst m = $('Missed Call - Check').first().json;\nconst last10 = v => String(v || '').replace(/\\D/g, '').slice(-10);\nconst booked = $('Missed Call - Orders Since Call').all().some(i => i.json && i.json.customer_phone && last10(i.json.customer_phone) === last10(m.phone));\nconst recent = $input.all().some(i => i.json && i.json.followup_id);\nif (booked || recent) return [];\nconst wa_body = { messaging_product: 'whatsapp', to: m.phone, type: 'template',\n  template: { name: TEMPLATE, language: { code: LANG }, components: [ { type: 'body', parameters: [ { type: 'text', text: 'there' } ] } ] } };\nreturn [{ json: Object.assign({}, m, { wa_body }), pairedItem: { item: 0 } }];"
+      },
+      "id": "mc000000-0000-4000-8000-000000000004",
+      "name": "Missed Call - Decide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "<SECRET>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wa_body) }}",
+        "options": {}
+      },
+      "id": "mc000000-0000-4000-8000-000000000005",
+      "name": "Missed Call - Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2272,
+        464
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "missed_call_followups",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{ $('Missed Call - Decide').item.json.phone }}"
+            },
+            {
+              "fieldId": "call_id",
+              "fieldValue": "={{ $('Missed Call - Decide').item.json.call_id }}"
+            },
+            {
+              "fieldId": "reason",
+              "fieldValue": "={{ $('Missed Call - Decide').item.json.reason }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ ($json.messages && $json.messages[0] && $json.messages[0].id) ? 'sent' : 'failed' }}"
+            },
+            {
+              "fieldId": "provider_message_id",
+              "fieldValue": "={{ ($json.messages && $json.messages[0] && $json.messages[0].id) || '' }}"
+            },
+            {
+              "fieldId": "error",
+              "fieldValue": "={{ $json.error ? JSON.stringify($json.error).slice(0, 500) : '' }}"
+            }
+          ]
+        }
+      },
+      "id": "mc000000-0000-4000-8000-000000000006",
+      "name": "Missed Call - Log",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        464
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "NexordisAcme_Supabase"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HubSpot - Prepare Voice Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Missed Call - Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger - Connectivity Check": {
+      "main": [
+        [
+          {
+            "node": "Get Companies (Connectivity Check)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Get Quote": {
+      "main": [
+        [
+          {
+            "node": "Geocode Pickup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Pricing Config": {
+      "main": [
+        [
+          {
+            "node": "Compute Quote Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Quote Price": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Book Order": {
+      "main": [
+        [
+          {
+            "node": "Create Order Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order Row": {
+      "main": [
+        [
+          {
+            "node": "Build Confirmation Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HubSpot - Prepare Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Confirmation Message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Check Status": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - WhatsApp Verify": {
+      "main": [
+        [
+          {
+            "node": "Verify Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Token": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond - WA Verify OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - WA Verify Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - WhatsApp Receive": {
+      "main": [
+        [
+          {
+            "node": "Parse WA Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse WA Payload": {
+      "main": [
+        [
+          {
+            "node": "If - Is Status Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Is Status Callback": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Get Conversation State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation State": {
+      "main": [
+        [
+          {
+            "node": "Normalize Conversation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Conversation Context": {
+      "main": [
+        [
+          {
+            "node": "If - New Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Classify Intent": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini - Classify Intent (Fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Ready to Proceed": {
+      "main": [
+        [
+          {
+            "node": "Switch - Route Intent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Slots (Ready Path)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If - Conversation Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Conversation Exists": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Route Intent": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Quote",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Get Quote (Book)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Check Order Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format FAQ Reply (Direct)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Cancel Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Ambiguous Intent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Off-Topic Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Quote": {
+      "main": [
+        [
+          {
+            "node": "Format Quote Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Quote (Book)": {
+      "main": [
+        [
+          {
+            "node": "If - Quote Found (Book)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Quote Found (Book)": {
+      "main": [
+        [
+          {
+            "node": "Format Booking Failed Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP - Book Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Book Order": {
+      "main": [
+        [
+          {
+            "node": "Format Booking Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Check Order Status": {
+      "main": [
+        [
+          {
+            "node": "Format Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Answer FAQ": {
+      "main": [
+        [
+          {
+            "node": "Format FAQ Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Booking Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Last Order Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Booking Failed Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format FAQ Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Quote Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "Format Clarifying Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Format Clarifying Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Conversation Row": {
+      "main": [
+        []
+      ]
+    },
+    "Format Clarifying Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule - Cleanup Stale Conversations": {
+      "main": [
+        [
+          {
+            "node": "Delete Stale Conversation Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Gemini Response": {
+      "main": [
+        [
+          {
+            "node": "Enforce Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Reply Data": {
+      "main": [
+        [
+          {
+            "node": "If - Not Test Sender",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Last Bot Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini - Classify Intent (Fallback)": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Knowledge Base Docs": {
+      "main": [
+        [
+          {
+            "node": "Build KB for Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Knowledge Context": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Answer FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Delete Conversation Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Off-Topic Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - New Conversation": {
+      "main": [
+        [
+          {
+            "node": "Get Knowledge Base Docs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If - Just Greeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Welcome Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build KB for Classifier": {
+      "main": [
+        [
+          {
+            "node": "Gemini - Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format FAQ Reply (Direct)": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Not Test Sender": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Not Test Sender (Menu)": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enforce Required Fields": {
+      "main": [
+        [
+          {
+            "node": "If - Ready to Proceed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Prepare Booking": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Upsert Contact (Booking)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Upsert Contact (Booking)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Upsert Deal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Upsert Deal": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Link Deal to Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Prepare WhatsApp Contact": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Upsert Contact (WhatsApp)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Prepare Voice Contact": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Upsert Contact (Voice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Upsert Contact (Voice)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Log Call Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Order Status Changed": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Map Order Stage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email - Check Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Map Order Stage": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Update Deal Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Cancel Order": {
+      "main": [
+        [
+          {
+            "node": "Get Order for Cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order for Cancel": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Cancellation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Cancellation": {
+      "main": [
+        [
+          {
+            "node": "If - Do Cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Do Cancel": {
+      "main": [
+        [
+          {
+            "node": "Cancel Order Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook - Cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Order Row": {
+      "main": [
+        [
+          {
+            "node": "Build Cancel Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cancel Result": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - Cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Cancel Order": {
+      "main": [
+        [
+          {
+            "node": "Format Cancel Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cancel Reply": {
+      "main": [
+        [
+          {
+            "node": "Resolve Reply Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Check Event": {
+      "main": [
+        [
+          {
+            "node": "Email - Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Get Order": {
+      "main": [
+        [
+          {
+            "node": "Email - Build Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Build Message": {
+      "main": [
+        [
+          {
+            "node": "Email - Send (SMTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Send (Brevo)": {
+      "main": [
+        []
+      ]
+    },
+    "Geocode Pickup": {
+      "main": [
+        [
+          {
+            "node": "Geocode Drop-off",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geocode Drop-off": {
+      "main": [
+        [
+          {
+            "node": "Determine Zone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Zone": {
+      "main": [
+        [
+          {
+            "node": "Lookup Pricing Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Send (Gmail)": {
+      "main": [
+        []
+      ]
+    },
+    "Email - Send (SMTP)": {
+      "main": [
+        [
+          {
+            "node": "Email - Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Just Greeting": {
+      "main": [
+        [
+          {
+            "node": "Format Welcome Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Welcome Conversation Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If - Not Test Sender (Menu)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HubSpot - Prepare WhatsApp Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Conversation Row (Request)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HubSpot - Prepare WhatsApp Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation Row (Request)": {
+      "main": [
+        [
+          {
+            "node": "Get Knowledge Base Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missed Call - Check": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Orders Since Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missed Call - Orders Since Call": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Recent Follow-ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missed Call - Recent Follow-ups": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missed Call - Decide": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Missed Call - Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Missed Call - Recent Follow-ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "<REDACTED>",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "<REDACTED>"
+  },
+  "id": "<REDACTED>",
+  "tags": []
+}
