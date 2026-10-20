@@ -8,6 +8,9 @@ Tailwind CSS v4 · Recharts · lucide icons · Geist font · Supabase (Postgres)
 
 ## Screens
 
+![Overview](../docs/screenshots/overview.png)
+![Dispatch](../docs/screenshots/dispatch.png)
+
 | Screen | What it does |
 |---|---|
 | **Overview** | Orders, booked revenue, average order value, AI-handled share, orders by channel per day, channel mix, pipeline by status, cancellation rate and fees, revenue by service, latest orders, busiest hours. 7/30/90-day and all-time ranges, with change vs the previous period. |

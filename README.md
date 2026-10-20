@@ -47,6 +47,16 @@ picked up, the deal moves stage, the customer gets an email, and the bot answers
 
 ---
 
+## Ops Console
+
+| Overview | Dispatch board |
+|---|---|
+| ![Overview: orders, revenue, channel mix](docs/screenshots/overview.png) | ![Dispatch: kanban from booking to delivery](docs/screenshots/dispatch.png) |
+| **Calls** | **Conversations** |
+| ![Calls: voice AI call log and missed-call recovery](docs/screenshots/calls.png) | ![Conversations: live WhatsApp state and review queue](docs/screenshots/conversations.png) |
+
+---
+
 ## Architecture
 
 ```mermaid
