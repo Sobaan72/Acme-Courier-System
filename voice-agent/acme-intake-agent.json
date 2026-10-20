@@ -1,0 +1,1279 @@
+{
+  "agent_id": "<REDACTED>",
+  "channel": "voice",
+  "last_modification_timestamp": "<REDACTED>",
+  "agent_name": "Acme Courier Intake Agent (cancellation)",
+  "version_description": "Copy of live Acme Courier Intake Agent V15, unchanged except: added check_cancellation + confirm_cancellation tools (n8n acme/cancel-order), 6 cancellation nodes, a start edge for 'cancel an existing order', and the agent webhook URL (n8n acme/call-events) so finished calls reach Supabase + HubSpot.",
+  "response_engine": {
+    "version": 0,
+    "type": "conversation-flow",
+    "conversation_flow_id": "<REDACTED>"
+  },
+  "webhook_url": "https://<N8N_HOST>/webhook/acme/call-events",
+  "language": "en-US",
+  "data_storage_setting": "everything",
+  "contact_memory_config": {
+    "enable_read": true,
+    "enable_update": false
+  },
+  "opt_in_signed_url": false,
+  "version": 0,
+  "assigned_tags": [],
+  "is_published": true,
+  "version_title": "V15 + cancellation",
+  "post_call_analysis_model": "gpt-4.1",
+  "pii_config": {
+    "categories": [],
+    "mode": "post_call"
+  },
+  "voice_id": "retell-Cimo",
+  "reminder_trigger_ms": 12000,
+  "reminder_max_count": 2,
+  "max_call_duration_ms": 3600000,
+  "allow_user_dtmf": true,
+  "user_dtmf_options": {},
+  "conversationFlow": {
+    "conversation_flow_id": "<REDACTED>",
+    "version": 0,
+    "last_modification_timestamp": "<REDACTED>",
+    "global_prompt": "You are Ava, the AI dispatch intake agent for {{company_name}}, a same-day courier company serving {{service_area}}. Business hours are {{business_hours}}. Always be professional, warm, and efficient — customers are often calling because they need something picked up or delivered quickly. Never invent pricing, policies, or delivery times that were not given to you by a tool result or the knowledge base. Only state a price or confirm a booking when the flow has routed you to a node that explicitly presents that information — the routing itself is driven by the tool's success/found result, not by your own judgment, so never guess or soften a failed lookup into a success. Never end the call or use the end-call action without first speaking the message you were about to say — if you don't clearly hear or understand what the customer said, or the audio is unclear or silent, politely ask them to repeat themselves rather than ending the call. Only end the call after you have delivered your closing line and the customer has had a chance to respond, or after multiple consecutive attempts to get a clear response have failed. If a customer expresses a complaint, dispute, or driver-conduct issue, do not attempt to resolve it yourself — this must always be handed to a human dispatcher. If a customer simply says they'd prefer to talk to a human rather than an AI (not a complaint), briefly acknowledge that and offer them a clear choice: transfer to a dispatcher now, or continue quickly with you instead — then proceed based on what they choose, only transferring if they confirm they want that. If a generated quote exceeds $500, it must be reviewed by a human dispatcher before being confirmed. Never ask for or store full payment card numbers over the phone. If the customer changes the pickup address, dropoff address, package size, or service tier at any point — including after a quote was already given — you must get a brand new quote via the get_quote tool before stating any new price; never reuse, adjust, or restate a price from earlier in the conversation. Every price you speak and every price you pass to book_order must come from the most recent get_quote tool result, never from memory or estimation. If the customer interrupts or talks over you before you finish speaking — especially while you are delivering a confirmation number, price, order status, or other critical information — do not end the call. Finish delivering that critical information (or directly answer whatever the customer just asked) before ending the call. Never invoke the end-call action while a direct question from the customer remains unanswered or before a confirmation number you were about to state has actually been spoken.",
+    "nodes": [
+      {
+        "skippable": false,
+        "display_position": {
+          "y": 0,
+          "x": 0
+        },
+        "id": "start",
+        "edges": [
+          {
+            "destination_node_id": "collect_pickup",
+            "id": "edge_start_book",
+            "transition_condition": {
+              "prompt": "Customer wants to book a new delivery or place an order",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "check_status",
+            "id": "edge_start_status",
+            "transition_condition": {
+              "prompt": "Customer wants to check the status of an existing order",
+              "type": "prompt"
+            }
+          },
+          {
+            "transition_condition": {
+              "prompt": "Customer is asking a general question about pricing, service area, policies, or hours, and is not yet ready to book",
+              "type": "prompt"
+            },
+            "id": "edge_start_question",
+            "destination_node_id": "answer_policy_question"
+          },
+          {
+            "id": "edge_start_cancel",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer wants to cancel an existing order"
+            },
+            "destination_node_id": "collect_cancel_ref"
+          }
+        ],
+        "type": "conversation",
+        "instruction": {
+          "text": "Greet the customer as Ava from {{company_name}}. Ask how you can help them today — booking a new delivery, checking the status of an existing order, cancelling an order, or a general question.",
+          "type": "prompt"
+        }
+      },
+      {
+        "edges": [
+          {
+            "destination_node_id": "collect_dropoff",
+            "transition_condition": {
+              "prompt": "Pickup address has been provided",
+              "type": "prompt"
+            },
+            "id": "edge_pickup_next"
+          },
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer cannot provide a specific enough pickup address right now and needs to check or confirm it later"
+            },
+            "id": "edge_pickup_cant_provide",
+            "destination_node_id": "escalate_general"
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_pickup_leaving",
+            "transition_condition": {
+              "prompt": "Customer indicates they want to end the call now, will call back later, or does not want to continue right now",
+              "type": "prompt"
+            }
+          }
+        ],
+        "type": "conversation",
+        "display_position": {
+          "y": -150,
+          "x": 300
+        },
+        "id": "collect_pickup",
+        "skippable": false,
+        "instruction": {
+          "text": "Ask the customer for the full pickup address, including postal code if they know it.",
+          "type": "prompt"
+        }
+      },
+      {
+        "display_position": {
+          "y": -150,
+          "x": 600
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask the customer for the full dropoff address, including postal code if they know it."
+        },
+        "skippable": false,
+        "edges": [
+          {
+            "destination_node_id": "collect_package",
+            "id": "edge_dropoff_next",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Dropoff address has been provided"
+            }
+          },
+          {
+            "id": "edge_dropoff_cant_provide",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer cannot provide a specific enough dropoff address right now and needs to check or confirm it later"
+            },
+            "destination_node_id": "escalate_general"
+          },
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer indicates they want to end the call now, will call back later, or does not want to continue right now"
+            },
+            "destination_node_id": "goodbye",
+            "id": "edge_dropoff_leaving"
+          }
+        ],
+        "id": "collect_dropoff",
+        "type": "conversation"
+      },
+      {
+        "instruction": {
+          "text": "Ask what is being shipped and its approximate size or weight, so you can classify it as Small (up to 5kg), Medium (up to 15kg), Large (up to 25kg), or Extra-Large (up to 50kg, requires cargo van). If the customer doesn't know, is impatient, or otherwise won't specify but is fine with you estimating, classify it as Medium, let them know a driver will confirm the exact size at pickup, and continue normally — do not escalate just because they didn't give you a precise answer. If the item is heavier than 50kg or otherwise does not fit these categories, do not quote a price and do not say you will personally flag it for review — that is not something you can actually do. Instead, let them know this needs a custom quote from a dispatcher and connect them now.",
+          "type": "prompt"
+        },
+        "type": "conversation",
+        "id": "collect_package",
+        "display_position": {
+          "y": -150,
+          "x": 900
+        },
+        "skippable": false,
+        "edges": [
+          {
+            "destination_node_id": "escalate_general",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The item's stated weight or size clearly exceeds our largest category (Extra-Large, up to 50kg)"
+            },
+            "id": "edge_package_overweight"
+          },
+          {
+            "id": "edge_package_next",
+            "transition_condition": {
+              "prompt": "Package size has been determined, or the customer doesn't know/won't specify and you have estimated a reasonable default (Medium) to keep things moving",
+              "type": "prompt"
+            },
+            "destination_node_id": "collect_service_tier"
+          },
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer explicitly refuses to let you proceed at all without exact size/weight details, even after being offered a default estimate"
+            },
+            "destination_node_id": "escalate_general",
+            "id": "edge_package_cant_provide"
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_package_leaving",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer indicates they want to end the call now, will call back later, or does not want to continue right now"
+            }
+          }
+        ]
+      },
+      {
+        "display_position": {
+          "y": -150,
+          "x": 1200
+        },
+        "edges": [
+          {
+            "destination_node_id": "get_quote_function",
+            "id": "edge_tier_next",
+            "transition_condition": {
+              "prompt": "Service tier has been selected",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "escalate_general",
+            "id": "edge_tier_cant_decide",
+            "transition_condition": {
+              "prompt": "Customer remains unable or unwilling to choose a service tier even after being offered a starting quote to compare against",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "goodbye",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer indicates they want to end the call now, will call back later, or does not want to continue right now"
+            },
+            "id": "edge_tier_leaving"
+          }
+        ],
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask how soon they need this delivered: Same-Day Standard (delivered same day, no fixed window), Same-Day Express (guaranteed 2-hour window, premium price), or Next-Day (delivered by end of day tomorrow, discounted price). If it's after 4:00 PM and they want same-day service, let them know it will be flagged as a late same-day request and may roll to next-day if driver capacity doesn't allow it. If the customer is unsure and wants to compare pricing before deciding, do not state or estimate any price yourself — suggest getting a real quote for Same-Day Standard first as a reasonable starting point, since they can easily switch tiers afterward and you'll get a fresh accurate quote each time."
+        },
+        "type": "conversation",
+        "skippable": false,
+        "id": "collect_service_tier"
+      },
+      {
+        "display_position": {
+          "x": 1500,
+          "y": -150
+        },
+        "else_edge": {
+          "destination_node_id": "present_quote",
+          "id": "edge_normal_value",
+          "transition_condition": {
+            "prompt": "Else",
+            "type": "prompt"
+          }
+        },
+        "id": "get_quote_function",
+        "skippable": false,
+        "type": "function",
+        "wait_for_result": true,
+        "edges": [
+          {
+            "id": "edge_quote_not_found",
+            "destination_node_id": "quote_unavailable",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The get_quote tool result you just received has found set to false, price set to null, or the tool call did not return a usable result at all — check the actual tool_call_result content, not conversation memory"
+            }
+          },
+          {
+            "transition_condition": {
+              "prompt": "The get_quote tool result you just received has found set to true and price greater than 500 — check the actual tool_call_result content",
+              "type": "prompt"
+            },
+            "id": "edge_high_value",
+            "destination_node_id": "escalate_high_value_quote"
+          }
+        ],
+        "tool_id": "tool_get_quote",
+        "instruction": {
+          "text": "Let the customer know you're calculating their quote now.",
+          "type": "prompt"
+        },
+        "tool_type": "local",
+        "speak_during_execution": true
+      },
+      {
+        "id": "quote_unavailable",
+        "type": "conversation",
+        "edges": [
+          {
+            "destination_node_id": "collect_package",
+            "id": "edge_quote_unavailable_retry",
+            "transition_condition": {
+              "prompt": "Customer wants to try again with different package or service tier details",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "escalate_general",
+            "id": "edge_quote_unavailable_transfer",
+            "transition_condition": {
+              "prompt": "Customer wants to be connected to a dispatcher",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_quote_unavailable_done",
+            "transition_condition": {
+              "prompt": "Customer does not want to proceed",
+              "type": "prompt"
+            }
+          }
+        ],
+        "skippable": false,
+        "display_position": {
+          "x": 1800,
+          "y": 100
+        },
+        "instruction": {
+          "text": "Apologize that you're unable to calculate a quote for that exact combination of package size and service tier right now. Do not state any price or make one up. Ask if they'd like to try different pickup/dropoff details or a different service tier, or if they'd prefer to be connected with a dispatcher who can quote it manually.",
+          "type": "prompt"
+        }
+      },
+      {
+        "display_position": {
+          "x": 2100,
+          "y": -300
+        },
+        "skippable": false,
+        "edge": {
+          "id": "edge_transfer_failed_highvalue",
+          "destination_node_id": "tool_error",
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Transfer failed"
+          }
+        },
+        "instruction": {
+          "text": "This quote needs a quick review from our dispatch team before I can confirm it — let me connect you now.",
+          "type": "static_text"
+        },
+        "type": "transfer_call",
+        "transfer_destination": {
+          "type": "predefined",
+          "number": "{{escalation_phone}}"
+        },
+        "transfer_option": {
+          "type": "cold_transfer"
+        },
+        "speak_during_execution": true,
+        "id": "escalate_high_value_quote"
+      },
+      {
+        "id": "present_quote",
+        "edges": [
+          {
+            "id": "edge_quote_confirmed",
+            "transition_condition": {
+              "prompt": "Customer confirms they want to book the delivery at the price just stated",
+              "type": "prompt"
+            },
+            "destination_node_id": "confirm_booking"
+          },
+          {
+            "id": "edge_quote_change_details",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer wants a different package size, service tier, pickup address, or dropoff address than what was just quoted"
+            },
+            "destination_node_id": "collect_service_tier"
+          },
+          {
+            "id": "edge_quote_declined",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer does not want to proceed with booking"
+            },
+            "destination_node_id": "goodbye"
+          }
+        ],
+        "type": "conversation",
+        "instruction": {
+          "type": "prompt",
+          "text": "Tell the customer their quote is {{quote_amount}} {{quote_currency}}, using only the amount and currency from the get_quote tool result you just received — never a number from earlier in the conversation or one you calculate yourself. Ask if they'd like to confirm and book this delivery."
+        },
+        "display_position": {
+          "x": 2100,
+          "y": -50
+        },
+        "skippable": false
+      },
+      {
+        "type": "conversation",
+        "display_position": {
+          "y": -50,
+          "x": 2400
+        },
+        "edges": [
+          {
+            "destination_node_id": "extract_contact_info",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer's name and phone number have been provided"
+            },
+            "id": "edge_contact_collected"
+          }
+        ],
+        "skippable": false,
+        "instruction": {
+          "text": "Ask for the customer's name and best contact phone number to finalize the booking.",
+          "type": "prompt"
+        },
+        "id": "confirm_booking"
+      },
+      {
+        "skippable": false,
+        "display_position": {
+          "y": -50,
+          "x": 2700
+        },
+        "type": "extract_dynamic_variables",
+        "edges": [
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Always"
+            },
+            "destination_node_id": "book_order_function",
+            "id": "edge_extracted_next"
+          }
+        ],
+        "id": "extract_contact_info",
+        "variables": [
+          {
+            "name": "customer_name",
+            "description": "The customer's full name as given during the call",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "customer_phone",
+            "description": "The customer's contact phone number as given during the call"
+          }
+        ]
+      },
+      {
+        "speak_during_execution": true,
+        "edges": [
+          {
+            "id": "edge_booking_success",
+            "destination_node_id": "booking_confirmed",
+            "transition_condition": {
+              "prompt": "The book_order tool result you just received has success set to true and includes an order_id — check the actual tool_call_result content, not conversation memory",
+              "type": "prompt"
+            }
+          }
+        ],
+        "else_edge": {
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Else"
+          },
+          "destination_node_id": "booking_failed",
+          "id": "edge_booking_error"
+        },
+        "tool_id": "tool_book_order",
+        "skippable": false,
+        "id": "book_order_function",
+        "tool_type": "local",
+        "type": "function",
+        "display_position": {
+          "x": 3000,
+          "y": -50
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Let the customer know you're finalizing the booking."
+        },
+        "wait_for_result": true
+      },
+      {
+        "type": "conversation",
+        "id": "booking_failed",
+        "display_position": {
+          "y": 150,
+          "x": 3000
+        },
+        "edges": [
+          {
+            "id": "edge_booking_failed_retry",
+            "destination_node_id": "book_order_function",
+            "transition_condition": {
+              "prompt": "Customer wants to try booking again right now",
+              "type": "prompt"
+            }
+          },
+          {
+            "id": "edge_booking_failed_transfer",
+            "transition_condition": {
+              "prompt": "Customer wants to be connected to a dispatcher",
+              "type": "prompt"
+            },
+            "destination_node_id": "escalate_general"
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_booking_failed_done",
+            "transition_condition": {
+              "prompt": "Customer does not want to try again",
+              "type": "prompt"
+            }
+          }
+        ],
+        "skippable": false,
+        "instruction": {
+          "text": "Apologize that the booking could not be completed due to a system issue right now. Do not say the order is booked or confirmed, and do not give a confirmation number. Let them know a dispatcher will follow up shortly to complete it manually, or offer to try again now.",
+          "type": "prompt"
+        }
+      },
+      {
+        "type": "conversation",
+        "display_position": {
+          "y": -50,
+          "x": 3300
+        },
+        "id": "booking_confirmed",
+        "instruction": {
+          "type": "prompt",
+          "text": "Confirm the booking is complete and read back the order confirmation number clearly using {{order_confirmation}}. This confirmation number is the single most important thing to deliver — state it plainly even if the customer interrupts or asks for it directly. Then ask if there's anything else you can help with."
+        },
+        "edges": [
+          {
+            "id": "edge_booking_confirmed_more_help",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer has another request"
+            },
+            "destination_node_id": "start"
+          },
+          {
+            "transition_condition": {
+              "prompt": "Customer has no further questions",
+              "type": "prompt"
+            },
+            "id": "edge_booking_confirmed_done",
+            "destination_node_id": "goodbye"
+          }
+        ],
+        "skippable": false
+      },
+      {
+        "display_position": {
+          "y": 150,
+          "x": 300
+        },
+        "edges": [
+          {
+            "id": "edge_status_ref_next",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Order number or phone number has been provided"
+            },
+            "destination_node_id": "status_lookup_function"
+          }
+        ],
+        "skippable": false,
+        "id": "check_status",
+        "type": "conversation",
+        "instruction": {
+          "type": "prompt",
+          "text": "Ask the customer for their order number, or if they don't have it, their phone number on file, so you can look up the order."
+        }
+      },
+      {
+        "speak_during_execution": true,
+        "tool_type": "local",
+        "tool_id": "tool_check_status",
+        "type": "function",
+        "else_edge": {
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Else"
+          },
+          "id": "edge_status_not_found",
+          "destination_node_id": "status_not_found"
+        },
+        "wait_for_result": true,
+        "edges": [
+          {
+            "destination_node_id": "present_status",
+            "id": "edge_status_found",
+            "transition_condition": {
+              "prompt": "The check_order_status tool result you just received has found set to true — check the actual tool_call_result content, not conversation memory",
+              "type": "prompt"
+            }
+          }
+        ],
+        "skippable": false,
+        "id": "status_lookup_function",
+        "instruction": {
+          "type": "prompt",
+          "text": "Let the customer know you're looking up their order now."
+        },
+        "display_position": {
+          "y": 150,
+          "x": 600
+        }
+      },
+      {
+        "id": "present_status",
+        "display_position": {
+          "x": 900,
+          "y": 150
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Tell the customer their order status is {{order_status}} with an estimated time of {{order_eta}}. Ask if there is anything else you can help with."
+        },
+        "skippable": false,
+        "type": "conversation",
+        "edges": [
+          {
+            "id": "edge_status_more_help",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer has another request"
+            },
+            "destination_node_id": "start"
+          },
+          {
+            "transition_condition": {
+              "prompt": "Customer has no further questions",
+              "type": "prompt"
+            },
+            "destination_node_id": "goodbye",
+            "id": "edge_status_done"
+          }
+        ]
+      },
+      {
+        "type": "conversation",
+        "skippable": false,
+        "id": "status_not_found",
+        "edges": [
+          {
+            "id": "edge_status_not_found_retry",
+            "transition_condition": {
+              "prompt": "Customer provides a different order number or phone number to try",
+              "type": "prompt"
+            },
+            "destination_node_id": "check_status"
+          },
+          {
+            "id": "edge_status_not_found_transfer",
+            "transition_condition": {
+              "prompt": "Customer wants to be connected to a dispatcher",
+              "type": "prompt"
+            },
+            "destination_node_id": "escalate_general"
+          },
+          {
+            "id": "edge_status_not_found_done",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer does not want to be transferred"
+            },
+            "destination_node_id": "goodbye"
+          }
+        ],
+        "instruction": {
+          "type": "prompt",
+          "text": "Apologize that you could not find an order matching what they provided. Offer to try a different order number or phone number, or to connect them with a dispatcher who can look further. Never state whether a different order number is found or not found unless you have actually just looked it up with the check_order_status tool — if the customer gives you a new number, you must look it up again rather than guessing."
+        },
+        "display_position": {
+          "y": 300,
+          "x": 900
+        }
+      },
+      {
+        "edges": [
+          {
+            "destination_node_id": "collect_pickup",
+            "id": "edge_policy_answered",
+            "transition_condition": {
+              "prompt": "Question has been answered and customer wants to book a delivery",
+              "type": "prompt"
+            }
+          },
+          {
+            "destination_node_id": "goodbye",
+            "transition_condition": {
+              "prompt": "Question has been answered and customer has nothing further",
+              "type": "prompt"
+            },
+            "id": "edge_policy_done"
+          },
+          {
+            "destination_node_id": "escalate_general",
+            "id": "edge_policy_needs_human",
+            "transition_condition": {
+              "prompt": "Knowledge base does not answer the question and customer wants to speak with a person",
+              "type": "prompt"
+            }
+          }
+        ],
+        "kb_config": {
+          "filter_score": 0.5,
+          "top_k": 3
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Answer the customer's question using only the connected knowledge base of Acme Courier Co. policies, FAQs, and service-area information. If the knowledge base does not clearly answer the question, say you're not certain and offer to connect them with a dispatcher rather than guessing."
+        },
+        "id": "answer_policy_question",
+        "skippable": false,
+        "knowledge_base_ids": [],
+        "type": "subagent",
+        "display_position": {
+          "y": 450,
+          "x": 300
+        }
+      },
+      {
+        "id": "escalate_complaint",
+        "type": "transfer_call",
+        "transfer_destination": {
+          "type": "predefined",
+          "number": "{{escalation_phone}}"
+        },
+        "instruction": {
+          "type": "static_text",
+          "text": "I understand, and I want to make sure this gets handled properly — let me connect you with our dispatch team right away."
+        },
+        "transfer_option": {
+          "type": "cold_transfer"
+        },
+        "skippable": false,
+        "speak_during_execution": true,
+        "global_node_setting": {
+          "condition": "Customer expresses a complaint, dispute, or dissatisfaction, mentions a damaged or lost package dispute, raises a driver-conduct issue, requests deletion of their data, or explicitly insists on being transferred to a human dispatcher after being offered the choice to continue with the agent instead. Do NOT fire this just because the customer expresses a general preference to talk to a human rather than an AI at the start of the call — that alone is not a complaint; offer them the choice first.",
+          "cool_down": 3
+        },
+        "display_position": {
+          "x": 0,
+          "y": 600
+        },
+        "edge": {
+          "destination_node_id": "tool_error",
+          "id": "edge_transfer_failed_complaint",
+          "transition_condition": {
+            "prompt": "Transfer failed",
+            "type": "prompt"
+          }
+        }
+      },
+      {
+        "transfer_destination": {
+          "number": "{{escalation_phone}}",
+          "type": "predefined"
+        },
+        "transfer_option": {
+          "type": "cold_transfer"
+        },
+        "id": "escalate_general",
+        "skippable": false,
+        "display_position": {
+          "x": 900,
+          "y": 450
+        },
+        "type": "transfer_call",
+        "speak_during_execution": true,
+        "instruction": {
+          "text": "Let me connect you with a dispatcher who can help further.",
+          "type": "static_text"
+        },
+        "edge": {
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Transfer failed"
+          },
+          "destination_node_id": "tool_error",
+          "id": "edge_transfer_failed_general"
+        }
+      },
+      {
+        "instruction": {
+          "text": "Apologize for a technical issue on the line and let the customer know a dispatcher will follow up with them shortly. If the customer asks a question or has anything else to say, answer it or address it before wrapping up — never ignore something they just said.",
+          "type": "prompt"
+        },
+        "type": "conversation",
+        "id": "tool_error",
+        "display_position": {
+          "x": 1800,
+          "y": 450
+        },
+        "edges": [
+          {
+            "id": "edge_tool_error_more_help",
+            "destination_node_id": "start",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer has another request or question"
+            }
+          },
+          {
+            "destination_node_id": "goodbye",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer has no further questions"
+            },
+            "id": "edge_tool_error_done"
+          }
+        ],
+        "skippable": false
+      },
+      {
+        "type": "end",
+        "speak_during_execution": true,
+        "id": "goodbye",
+        "skippable": false,
+        "display_position": {
+          "x": 2700,
+          "y": 300
+        },
+        "instruction": {
+          "text": "Thanks for calling Acme Courier Co. Have a great day!",
+          "type": "static_text"
+        }
+      },
+      {
+        "instruction": {
+          "text": "The customer wants to cancel an order. Ask for the order number (the confirmation number they got when they booked). Do not promise anything about fees yet.",
+          "type": "prompt"
+        },
+        "type": "conversation",
+        "id": "collect_cancel_ref",
+        "edges": [
+          {
+            "id": "edge_cancel_ref_next",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The customer has given an order number"
+            },
+            "destination_node_id": "cancel_check_function"
+          }
+        ],
+        "skippable": false,
+        "display_position": {
+          "x": 300,
+          "y": 1400
+        }
+      },
+      {
+        "type": "function",
+        "tool_type": "local",
+        "edges": [
+          {
+            "id": "edge_cancel_allowed",
+            "transition_condition": {
+              "prompt": "The check_cancellation tool result you just received has can_cancel set to true, check the actual tool_call_result content, not conversation memory",
+              "type": "prompt"
+            },
+            "destination_node_id": "present_cancel_terms"
+          }
+        ],
+        "wait_for_result": true,
+        "id": "cancel_check_function",
+        "skippable": false,
+        "else_edge": {
+          "id": "edge_cancel_not_allowed",
+          "transition_condition": {
+            "prompt": "Else",
+            "type": "prompt"
+          },
+          "destination_node_id": "cancel_not_possible"
+        },
+        "tool_id": "tool_cancel_check",
+        "display_position": {
+          "x": 600,
+          "y": 1400
+        },
+        "speak_during_execution": true,
+        "instruction": {
+          "type": "prompt",
+          "text": "Let the customer know you're checking the order now."
+        }
+      },
+      {
+        "edges": [
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "The customer clearly confirms they want to cancel the order"
+            },
+            "id": "edge_cancel_confirmed",
+            "destination_node_id": "cancel_confirm_function"
+          },
+          {
+            "transition_condition": {
+              "prompt": "The customer decides not to cancel and has another request",
+              "type": "prompt"
+            },
+            "id": "edge_cancel_declined_more",
+            "destination_node_id": "start"
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_cancel_declined_done",
+            "transition_condition": {
+              "prompt": "The customer decides not to cancel and has nothing else",
+              "type": "prompt"
+            }
+          }
+        ],
+        "display_position": {
+          "y": 1400,
+          "x": 900
+        },
+        "skippable": false,
+        "type": "conversation",
+        "instruction": {
+          "text": "Explain the cancellation terms from this result in natural spoken language: {{cancel_message}}. Ignore the words 'Reply YES' in it; instead ask the customer to confirm out loud whether they want to go ahead and cancel. Never say the order is cancelled at this point.",
+          "type": "prompt"
+        },
+        "id": "present_cancel_terms"
+      },
+      {
+        "speak_during_execution": true,
+        "skippable": false,
+        "type": "function",
+        "instruction": {
+          "text": "Let the customer know you're cancelling the order now.",
+          "type": "prompt"
+        },
+        "edges": [
+          {
+            "transition_condition": {
+              "prompt": "The confirm_cancellation tool result you just received has cancelled set to true, check the actual tool_call_result content",
+              "type": "prompt"
+            },
+            "destination_node_id": "cancel_done",
+            "id": "edge_cancel_done"
+          }
+        ],
+        "wait_for_result": true,
+        "id": "cancel_confirm_function",
+        "display_position": {
+          "y": 1400,
+          "x": 1200
+        },
+        "tool_id": "tool_cancel_confirm",
+        "else_edge": {
+          "transition_condition": {
+            "type": "prompt",
+            "prompt": "Else"
+          },
+          "id": "edge_cancel_failed",
+          "destination_node_id": "tool_error"
+        },
+        "tool_type": "local"
+      },
+      {
+        "type": "conversation",
+        "display_position": {
+          "y": 1400,
+          "x": 1500
+        },
+        "instruction": {
+          "type": "prompt",
+          "text": "Tell the customer the result in natural spoken language: {{cancel_result_message}}. Then ask if there is anything else you can help with."
+        },
+        "edges": [
+          {
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer has another request"
+            },
+            "id": "edge_cancel_done_more",
+            "destination_node_id": "start"
+          },
+          {
+            "destination_node_id": "goodbye",
+            "id": "edge_cancel_done_end",
+            "transition_condition": {
+              "prompt": "Customer has no further questions",
+              "type": "prompt"
+            }
+          }
+        ],
+        "skippable": false,
+        "id": "cancel_done"
+      },
+      {
+        "id": "cancel_not_possible",
+        "type": "conversation",
+        "display_position": {
+          "y": 1650,
+          "x": 900
+        },
+        "instruction": {
+          "text": "Explain in natural spoken language why the order can't be cancelled right now: {{cancel_message}}. Offer to try a different order number or to connect them with a dispatcher. Never claim an order was found or cancelled unless the tool just said so.",
+          "type": "prompt"
+        },
+        "skippable": false,
+        "edges": [
+          {
+            "destination_node_id": "cancel_check_function",
+            "id": "edge_cancel_retry",
+            "transition_condition": {
+              "type": "prompt",
+              "prompt": "Customer gives a different order number to try"
+            }
+          },
+          {
+            "destination_node_id": "escalate_general",
+            "id": "edge_cancel_transfer",
+            "transition_condition": {
+              "prompt": "Customer wants to speak to a dispatcher",
+              "type": "prompt"
+            }
+          },
+          {
+            "id": "edge_cancel_np_done",
+            "destination_node_id": "goodbye",
+            "transition_condition": {
+              "prompt": "Customer has nothing else",
+              "type": "prompt"
+            }
+          }
+        ]
+      }
+    ],
+    "start_node_id": "start",
+    "start_speaker": "agent",
+    "tools": [
+      {
+        "execution_message_type": "prompt",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pickup_address": {
+              "type": "string",
+              "description": "Full pickup address, including postal code if provided"
+            },
+            "dropoff_address": {
+              "type": "string",
+              "description": "Full dropoff address, including postal code if provided"
+            },
+            "service_tier": {
+              "enum": [
+                "same_day_standard",
+                "same_day_express",
+                "next_day"
+              ],
+              "type": "string",
+              "description": "Requested service tier"
+            },
+            "package_size": {
+              "type": "string",
+              "description": "Package size class",
+              "enum": [
+                "S",
+                "M",
+                "L",
+                "XL"
+              ]
+            }
+          },
+          "required": [
+            "pickup_address",
+            "dropoff_address",
+            "package_size",
+            "service_tier"
+          ]
+        },
+        "name": "get_quote",
+        "url": "https://<N8N_HOST>/webhook/acme/get-quote",
+        "tool_id": "tool_get_quote",
+        "method": "POST",
+        "timeout_ms": 15000,
+        "response_variables": {
+          "quote_amount": "$.price",
+          "quote_zone": "$.zone",
+          "quote_found": "$.found",
+          "quote_currency": "$.currency"
+        },
+        "speak_during_execution": true,
+        "description": "Calculates a delivery quote from pickup/dropoff address, package size, and service tier via the Nexordis n8n pricing workflow.",
+        "speak_after_execution": true,
+        "execution_message_description": "Let the customer know you are calculating their quote now.",
+        "type": "custom"
+      },
+      {
+        "url": "https://<N8N_HOST>/webhook/acme/book-order",
+        "description": "Confirms and books the order via the Nexordis n8n order-creation workflow, writing the order to Supabase.",
+        "response_variables": {
+          "order_confirmation": "$.confirmation_message",
+          "booking_success": "$.success",
+          "order_id": "$.order_id"
+        },
+        "name": "book_order",
+        "execution_message_description": "Let the customer know you are finalizing their booking.",
+        "execution_message_type": "prompt",
+        "speak_after_execution": true,
+        "tool_id": "tool_book_order",
+        "method": "POST",
+        "timeout_ms": 15000,
+        "parameters": {
+          "properties": {
+            "service_tier": {
+              "type": "string",
+              "enum": [
+                "same_day_standard",
+                "same_day_express",
+                "next_day"
+              ]
+            },
+            "package_size": {
+              "type": "string",
+              "enum": [
+                "S",
+                "M",
+                "L",
+                "XL"
+              ]
+            },
+            "customer_phone": {
+              "type": "string"
+            },
+            "quote_amount": {
+              "description": "The quoted price already presented to and accepted by the customer",
+              "type": "string"
+            },
+            "pickup_address": {
+              "type": "string"
+            },
+            "dropoff_address": {
+              "type": "string"
+            },
+            "customer_name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "pickup_address",
+            "dropoff_address",
+            "package_size",
+            "service_tier",
+            "quote_amount",
+            "customer_name",
+            "customer_phone"
+          ],
+          "type": "object"
+        },
+        "type": "custom",
+        "speak_during_execution": true
+      },
+      {
+        "name": "check_order_status",
+        "tool_id": "tool_check_status",
+        "description": "Looks up an existing order's live status via the Nexordis n8n WISMO workflow.",
+        "speak_during_execution": true,
+        "execution_message_description": "Let the customer know you are looking up their order now.",
+        "response_variables": {
+          "order_eta": "$.eta",
+          "order_status": "$.status",
+          "order_found": "$.found"
+        },
+        "speak_after_execution": true,
+        "execution_message_type": "prompt",
+        "timeout_ms": 15000,
+        "method": "POST",
+        "type": "custom",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_phone": {
+              "type": "string",
+              "description": "Phone number on file, used to look up the order if no order number is given"
+            },
+            "order_reference": {
+              "type": "string",
+              "description": "Order number if the customer has it"
+            }
+          }
+        },
+        "url": "https://<N8N_HOST>/webhook/acme/check-status"
+      },
+      {
+        "speak_during_execution": true,
+        "execution_message_description": "Let the customer know you are checking the order now.",
+        "name": "check_cancellation",
+        "timeout_ms": 15000,
+        "description": "Checks whether an order can be cancelled and what it would cost under the company cancellation policy. Does NOT cancel anything.",
+        "execution_message_type": "prompt",
+        "speak_after_execution": true,
+        "method": "POST",
+        "response_variables": {
+          "cancel_allowed": "$.can_cancel",
+          "cancel_message": "$.message",
+          "cancel_fee": "$.fee"
+        },
+        "tool_id": "tool_cancel_check",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "order_reference": {
+              "description": "The order number (confirmation number) of the order the customer wants to cancel",
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_reference"
+          ]
+        },
+        "type": "custom",
+        "url": "https://<N8N_HOST>/webhook/acme/cancel-order"
+      },
+      {
+        "url": "https://<N8N_HOST>/webhook/acme/cancel-order?confirm=1",
+        "tool_id": "tool_cancel_confirm",
+        "timeout_ms": 15000,
+        "method": "POST",
+        "execution_message_type": "prompt",
+        "speak_during_execution": true,
+        "speak_after_execution": true,
+        "type": "custom",
+        "description": "Cancels the order. Only call after the customer has clearly confirmed they want to cancel after hearing the terms.",
+        "execution_message_description": "Let the customer know you are cancelling the order now.",
+        "name": "confirm_cancellation",
+        "parameters": {
+          "required": [
+            "order_reference"
+          ],
+          "type": "object",
+          "properties": {
+            "order_reference": {
+              "type": "string",
+              "description": "The order number (confirmation number) of the order the customer wants to cancel"
+            }
+          }
+        },
+        "response_variables": {
+          "cancel_done": "$.cancelled",
+          "cancel_result_message": "$.message"
+        }
+      }
+    ],
+    "model_choice": {
+      "model": "gpt-4.1",
+      "type": "cascading"
+    },
+    "model_temperature": 0.2,
+    "default_dynamic_variables": {
+      "business_hours": "8:00 AM to 6:00 PM, Monday through Saturday",
+      "service_area": "Greater Toronto Area",
+      "escalation_phone": "+14165550100",
+      "company_name": "Acme Courier Co."
+    },
+    "knowledge_base_ids": [],
+    "kb_config": {
+      "filter_score": 0.6,
+      "top_k": 3
+    },
+    "is_published": true
+  }
+}
